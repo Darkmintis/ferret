@@ -1,0 +1,35 @@
+name: ferret
+description: >-
+  Modern HTTP inspector for Flutter — zero setup, production-safe, raw visibility.
+  See everything. Ship nothing you didn't mean to.
+version: 0.1.0
+homepage: https://darkmintis.dev/ferret
+repository: https://github.com/darkmintis/ferret
+issue_tracker: https://github.com/darkmintis/ferret/issues
+topics:
+  - http
+  - network
+  - debugging
+  - inspector
+  - dio
+
+environment:
+  sdk: ^3.12.1
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.9.0
+  http: ^1.5.0
+  path_provider: ^2.1.5
+  share_plus: ^11.0.0
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
