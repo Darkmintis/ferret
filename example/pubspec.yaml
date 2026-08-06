@@ -1,0 +1,23 @@
+name: ferret_example
+description: Simple Ferret demo — Dio, http, and dart:io against a public API.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ferret:
+    path: ../
+  dio: ^5.9.0
+  http: ^1.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
