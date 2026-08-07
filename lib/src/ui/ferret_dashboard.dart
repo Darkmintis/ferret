@@ -226,21 +226,29 @@ class _FerretDashboardState extends State<FerretDashboard>
 
   void _openDetail(FerretEntry entry) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => FerretDetailView(
-          entry: entry,
-          slowThreshold: widget.config.slowThreshold,
-          onReplay: () => widget.onReplay(entry),
-          onCompare: () {
-            setState(() => _compareId = entry.id);
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Select another call to compare'),
-              ),
-            );
-          },
-        ),
+      PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: const Duration(milliseconds: 120),
+        reverseTransitionDuration: const Duration(milliseconds: 100),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FerretDetailView(
+            entry: entry,
+            slowThreshold: widget.config.slowThreshold,
+            onReplay: () => widget.onReplay(entry),
+            onCompare: () {
+              setState(() => _compareId = entry.id);
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Select another call to compare'),
+                ),
+              );
+            },
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
       ),
     );
   }
@@ -390,8 +398,10 @@ class _CallsList extends StatelessWidget {
     }
 
     final scheme = Theme.of(context).colorScheme;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return ListView.separated(
+      padding: EdgeInsets.only(bottom: 24 + bottomInset),
       itemCount: entries.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
@@ -425,6 +435,7 @@ class _CallsList extends StatelessWidget {
             entry.url.path.isEmpty ? '/' : entry.url.path,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(
             [
@@ -438,8 +449,8 @@ class _CallsList extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           trailing: IconButton(
-            tooltip: 'Copy cURL',
-            icon: const Icon(Icons.terminal_rounded, size: 20),
+            tooltip: 'Copy as cURL',
+            icon: const Icon(Icons.copy_rounded, size: 20),
             onPressed: () async {
               await Clipboard.setData(
                 ClipboardData(text: const CurlExporter().export(entry)),
