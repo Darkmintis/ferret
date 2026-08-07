@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/ferret_entry.dart';
+import 'ferret_theme.dart';
 
 /// Side-by-side comparison of two captured calls.
 class FerretDiffView extends StatelessWidget {
@@ -15,14 +16,17 @@ class FerretDiffView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Compare')),
-      body: Row(
-        children: [
-          Expanded(child: _pane(context, 'A', left)),
-          const VerticalDivider(width: 1),
-          Expanded(child: _pane(context, 'B', right)),
-        ],
+    return FerretTheme.wrap(
+      context,
+      (context) => Scaffold(
+        appBar: AppBar(title: const Text('Compare')),
+        body: Row(
+          children: [
+            Expanded(child: _pane(context, 'A', left)),
+            const VerticalDivider(width: 1),
+            Expanded(child: _pane(context, 'B', right)),
+          ],
+        ),
       ),
     );
   }
