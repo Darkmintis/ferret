@@ -52,6 +52,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: Ferret.navigatorKey,
       builder: Ferret.builder, // floating bubble
       home: const HomePage(),
     );
@@ -143,12 +144,13 @@ The example fires real requests with Dio, `package:http`, and `dart:io` against 
 
 ```dart
 Ferret.install(config: ...);
-Ferret.builder                 // MaterialApp / CupertinoApp builder
+Ferret.navigatorKey           // attach to MaterialApp
+Ferret.builder                // MaterialApp / CupertinoApp builder
 Ferret.createDio([options])
 Ferret.dioInterceptor
 Ferret.wrapClient(client)
 Ferret.showOverlay(context)    // optional manual overlay
-Ferret.openDashboard(context)
+Ferret.openDashboard()         // opens inspector
 Ferret.clear()
 Ferret.toCurl(entry)
 Ferret.toHar(redact: false)
