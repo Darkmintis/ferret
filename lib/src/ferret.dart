@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'config/ferret_config.dart';
 import 'config/http_client_type.dart';
 import 'core/ferret_activation.dart';
+import 'core/ferret_capture_scope.dart';
 import 'core/ferret_engine.dart';
 import 'core/ferret_entry.dart';
 import 'core/ferret_store.dart';
@@ -339,6 +340,7 @@ class Ferret {
     _engine = null;
     _store?.dispose();
     _store = null;
+    FerretCaptureScope.resetForTest();
   }
 
   /// Whether [install] has been called in this isolate.

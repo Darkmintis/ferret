@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../config/http_client_type.dart';
+import '../core/ferret_capture_scope.dart';
 import '../core/ferret_engine.dart';
 
 /// Installs [HttpOverrides.global] to capture raw `dart:io` HTTP traffic.
@@ -221,6 +222,8 @@ class _FerretIoHttpClientRequest implements HttpClientRequest {
   void _ensureStarted() {
     if (_started) return;
     _started = true;
+    // Already recorded by Dio / package:http — skip duplicate dart:io entry.
+    if (FerretCaptureScope.isSuppressed) return;
     final headers = <String, String>{};
     _inner.headers.forEach((name, values) {
       headers[name] = values.join(', ');
@@ -264,10 +267,10 @@ class _FerretIoHttpClientRequest implements HttpClientRequest {
   @override
   Future<HttpClientResponse> close() async {
     _ensureStarted();
-    final id = _entryId!;
+    final id = _entryId;
     final raw = _body.takeBytes();
-    Object? requestBody;
-    if (raw.isNotEmpty) {
+    if (id != null && raw.isNotEmpty) {
+      Object? requestBody;
       try {
         requestBody = utf8.decode(raw);
       } on Object {
@@ -281,9 +284,12 @@ class _FerretIoHttpClientRequest implements HttpClientRequest {
 
     try {
       final response = await _inner.close();
+      if (id == null) return response;
       return _FerretIoHttpClientResponse(response, _engine, id);
     } on Object catch (error, stackTrace) {
-      _engine.fail(id, error, stackTrace);
+      if (id != null) {
+        _engine.fail(id, error, stackTrace);
+      }
       rethrow;
     }
   }

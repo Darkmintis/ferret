@@ -1,4 +1,5 @@
 import 'package:ferret/ferret.dart';
+import 'package:ferret/src/core/ferret_capture_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -187,6 +188,22 @@ void main() {
 
     expect(find.text('Ferret'), findsOneWidget);
     expect(find.textContaining('/'), findsWidgets);
+  });
+
+  group('FerretCaptureScope', () {
+    tearDown(FerretCaptureScope.resetForTest);
+
+    test('suppresses while nested', () async {
+      expect(FerretCaptureScope.isSuppressed, isFalse);
+      FerretCaptureScope.push();
+      expect(FerretCaptureScope.isSuppressed, isTrue);
+      await FerretCaptureScope.runSuppressed(() async {
+        expect(FerretCaptureScope.isSuppressed, isTrue);
+      });
+      expect(FerretCaptureScope.isSuppressed, isTrue);
+      FerretCaptureScope.pop();
+      expect(FerretCaptureScope.isSuppressed, isFalse);
+    });
   });
 }
 

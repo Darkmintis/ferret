@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../config/http_client_type.dart';
+import '../core/ferret_capture_scope.dart';
 import '../core/ferret_engine.dart';
 
 /// Wraps a [`package:http`] [http.Client] and records traffic.
@@ -41,7 +42,10 @@ class FerretHttpClient extends http.BaseClient {
     );
 
     try {
-      final response = await _inner.send(request);
+      // package:http uses dart:io under the hood — suppress the duplicate.
+      final response = await FerretCaptureScope.runSuppressed(
+        () => _inner.send(request),
+      );
       final bytes = await response.stream.toBytes();
       Object? body;
       try {

@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
 import '../config/http_client_type.dart';
+import '../core/ferret_capture_scope.dart';
 import '../core/ferret_engine.dart';
 
 /// Dio interceptor that records requests into [FerretEngine].
@@ -13,6 +13,7 @@ class FerretDioInterceptor extends Interceptor {
   final FerretEngine _engine;
 
   static const _entryIdExtra = 'ferret_entry_id';
+  static const _scopeExtra = 'ferret_scope_pushed';
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -34,11 +35,17 @@ class FerretDioInterceptor extends Interceptor {
       requestBody: _decodeBody(options.data),
     );
     options.extra[_entryIdExtra] = entry.id;
+
+    // Dio uses dart:io under the hood — suppress the duplicate capture.
+    FerretCaptureScope.push();
+    options.extra[_scopeExtra] = true;
+
     handler.next(options);
   }
 
   @override
   void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
+    _popScope(response.requestOptions);
     final id = response.requestOptions.extra[_entryIdExtra] as String?;
     if (id != null) {
       final headers = <String, String>{};
@@ -57,6 +64,7 @@ class FerretDioInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    _popScope(err.requestOptions);
     final id = err.requestOptions.extra[_entryIdExtra] as String?;
     if (id != null) {
       final response = err.response;
@@ -77,6 +85,12 @@ class FerretDioInterceptor extends Interceptor {
       }
     }
     handler.next(err);
+  }
+
+  static void _popScope(RequestOptions options) {
+    if (options.extra.remove(_scopeExtra) == true) {
+      FerretCaptureScope.pop();
+    }
   }
 
   static Object? _decodeBody(Object? data) {
