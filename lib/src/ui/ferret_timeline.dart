@@ -37,8 +37,10 @@ class FerretTimeline extends StatelessWidget {
 
     final scheme = Theme.of(context).colorScheme;
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + bottomInset),
       itemCount: completed.length,
       itemBuilder: (context, index) {
         final entry = completed[index];
@@ -55,7 +57,7 @@ class FerretTimeline extends StatelessWidget {
         return InkWell(
           onTap: onTap == null ? null : () => onTap!(entry),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,7 +65,9 @@ class FerretTimeline extends StatelessWidget {
                   '${entry.method} ${entry.host}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
@@ -71,9 +75,11 @@ class FerretTimeline extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return Stack(
+                        clipBehavior: Clip.none,
                         children: [
                           Container(
                             width: constraints.maxWidth,
+                            height: 14,
                             decoration: BoxDecoration(
                               color: scheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(7),
