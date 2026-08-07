@@ -46,8 +46,12 @@ class Ferret {
   );
   static OverlayEntry? _overlayEntry;
   static bool _installed = false;
+  static final ValueNotifier<bool> _inspectorOpen = ValueNotifier<bool>(false);
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
+
+  /// Whether the Ferret inspector screen is currently open.
+  static bool get isInspectorOpen => _inspectorOpen.value;
 
   /// Whether Ferret is currently capturing traffic.
   static bool get isActive => _activation.active;
@@ -148,13 +152,7 @@ class Ferret {
 
     hideOverlay();
     _overlayEntry = OverlayEntry(
-      builder: (context) => FerretBubble(
-        store: _store!,
-        config: _config,
-        showReleaseTag: _activation.showReleaseWarning,
-        onReplay: replay,
-        onClear: clear,
-      ),
+      builder: (context) => _bubble(),
     );
     overlay.insert(_overlayEntry!);
   }
@@ -166,18 +164,76 @@ class Ferret {
   }
 
   /// Opens the dashboard as a full-screen route.
-  static Future<void> openDashboard(BuildContext context) async {
+  ///
+  /// Prefer attaching [navigatorKey] to your [MaterialApp] so this works from
+  /// [builder] (the bubble sits above the navigator in the widget tree).
+  ///
+  /// Safe to call repeatedly — only one inspector is shown at a time, and the
+  /// floating button is hidden while it is open.
+  static Future<void> openDashboard([BuildContext? context]) async {
     if (!_activation.active || _store == null) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => FerretDashboard(
-          store: _store!,
-          config: _config,
-          onReplay: replay,
-          onClear: clear,
+    if (_inspectorOpen.value) return;
+
+    final nav = navigatorKey.currentState ??
+        (context != null
+            ? Navigator.maybeOf(context, rootNavigator: true)
+            : null);
+
+    if (nav == null) {
+      debugPrint(
+        'Ferret: no Navigator found. '
+        'Set MaterialApp(navigatorKey: Ferret.navigatorKey, builder: Ferret.builder).',
+      );
+      return;
+    }
+
+    _inspectorOpen.value = true;
+    try {
+      await nav.push(
+        PageRouteBuilder<void>(
+          opaque: true,
+          barrierDismissible: false,
+          transitionDuration: const Duration(milliseconds: 120),
+          reverseTransitionDuration: const Duration(milliseconds: 100),
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return FerretDashboard(
+              store: _store!,
+              config: _config,
+              onReplay: replay,
+              onClear: clear,
+            );
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
+              child: child,
+            );
+          },
         ),
-      ),
+      );
+    } finally {
+      _inspectorOpen.value = false;
+    }
+  }
+
+  static Widget _bubble() {
+    return ListenableBuilder(
+      listenable: _inspectorOpen,
+      builder: (context, _) {
+        if (_inspectorOpen.value) {
+          return const SizedBox.shrink();
+        }
+        return FerretBubble(
+          store: _store!,
+          showReleaseTag: _activation.showReleaseWarning,
+          onOpen: () {
+            unawaited(openDashboard());
+          },
+        );
+      },
     );
   }
 
@@ -236,8 +292,12 @@ class Ferret {
 
   /// Attach Ferret to [MaterialApp.builder] / [CupertinoApp.builder].
   ///
+  /// Also set [navigatorKey] on your app so the floating button can open
+  /// the inspector:
+  ///
   /// ```dart
   /// MaterialApp(
+  ///   navigatorKey: Ferret.navigatorKey,
   ///   builder: Ferret.builder,
   ///   home: HomePage(),
   /// )
@@ -250,13 +310,7 @@ class Ferret {
       fit: StackFit.expand,
       children: [
         child ?? const SizedBox.shrink(),
-        FerretBubble(
-          store: _store!,
-          config: _config,
-          showReleaseTag: _activation.showReleaseWarning,
-          onReplay: replay,
-          onClear: clear,
-        ),
+        _bubble(),
       ],
     );
   }
@@ -275,6 +329,7 @@ class Ferret {
 
   static void _tearDown() {
     hideOverlay();
+    _inspectorOpen.value = false;
     FerretDartIoOverride.uninstall();
     unawaited(_notifications?.stop());
     _notifications = null;
