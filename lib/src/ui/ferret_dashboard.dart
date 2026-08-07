@@ -11,6 +11,7 @@ import '../export/share_exporter.dart';
 import 'ferret_detail_view.dart';
 import 'ferret_diff_view.dart';
 import 'ferret_filter.dart';
+import 'ferret_theme.dart';
 import 'ferret_timeline.dart';
 
 /// Full inspector: list, filters, timeline, export.
@@ -37,7 +38,15 @@ class _FerretDashboardState extends State<FerretDashboard>
   late final TabController _tabs;
   FerretFilter _filter = FerretFilter.empty;
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
   String? _compareId;
+  bool _searchOpen = false;
+
+  bool get _hasActiveFilters =>
+      _filter.query.trim().isNotEmpty ||
+      _filter.failedOnly ||
+      _filter.slowOnly ||
+      _filter.methods.isNotEmpty;
 
   @override
   void initState() {
@@ -51,7 +60,19 @@ class _FerretDashboardState extends State<FerretDashboard>
     widget.store.removeListener(_onStore);
     _tabs.dispose();
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() => _searchOpen = !_searchOpen);
+    if (_searchOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocus.requestFocus();
+      });
+    } else {
+      _searchFocus.unfocus();
+    }
   }
 
   void _onStore() {
@@ -71,155 +92,104 @@ class _FerretDashboardState extends State<FerretDashboard>
       widget.config,
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Ferret'),
-            Text(
-              stats.statusLine,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Export / share',
-            onPressed: () => _openExportSheet(context),
-            icon: const Icon(Icons.ios_share_rounded),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'clear') {
-                widget.onClear?.call();
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'clear',
-                child: Text('Clear all'),
+    return FerretTheme.wrap(
+      context,
+      (context) => Scaffold(
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Ferret'),
+              Text(
+                stats.statusLine,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabs,
-          tabs: const [
-            Tab(text: 'Calls'),
-            Tab(text: 'Timeline'),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _search,
-              decoration: InputDecoration(
-                hintText: 'Search method, URL, status…',
-                prefixIcon: const Icon(Icons.search_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                isDense: true,
+          actions: [
+            IconButton(
+              tooltip: _searchOpen ? 'Hide search' : 'Search & filter',
+              isSelected: _searchOpen || _hasActiveFilters,
+              onPressed: _toggleSearch,
+              icon: Icon(
+                _searchOpen ? Icons.search_off_rounded : Icons.search_rounded,
               ),
-              onChanged: (value) {
+            ),
+            IconButton(
+              tooltip: 'Export / share',
+              onPressed: () => _openExportSheet(context),
+              icon: const Icon(Icons.ios_share_rounded),
+            ),
+            if (widget.onClear != null)
+              IconButton(
+                tooltip: 'Clear all',
+                onPressed: widget.onClear,
+                icon: const Icon(Icons.delete_outline_rounded),
+              ),
+          ],
+          bottom: TabBar(
+            controller: _tabs,
+            tabs: const [
+              Tab(text: 'Calls'),
+              Tab(text: 'Timeline'),
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            if (_searchOpen) _SearchPanel(
+              searchController: _search,
+              searchFocus: _searchFocus,
+              filter: _filter,
+              onQueryChanged: (value) {
                 setState(() {
                   _filter = _filter.copyWith(query: value);
                 });
               },
+              onFilterChanged: (filter) => setState(() => _filter = filter),
             ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: const Text('Failed'),
-                  selected: _filter.failedOnly,
-                  onSelected: (v) {
-                    setState(() {
-                      _filter = _filter.copyWith(failedOnly: v);
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Slow'),
-                  selected: _filter.slowOnly,
-                  onSelected: (v) {
-                    setState(() {
-                      _filter = _filter.copyWith(slowOnly: v);
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                for (final method in const ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) ...[
-                  FilterChip(
-                    label: Text(method),
-                    selected: _filter.methods.contains(method),
-                    onSelected: (v) {
+            Expanded(
+              child: TabBarView(
+                controller: _tabs,
+                children: [
+                  _CallsList(
+                    entries: entries,
+                    slowThreshold: widget.config.slowThreshold,
+                    compareId: _compareId,
+                    onOpen: _openDetail,
+                    onToggleCompare: (entry) {
                       setState(() {
-                        final next = {..._filter.methods};
-                        if (v) {
-                          next.add(method);
+                        if (_compareId == entry.id) {
+                          _compareId = null;
+                        } else if (_compareId == null) {
+                          _compareId = entry.id;
                         } else {
-                          next.remove(method);
+                          final left = widget.store.getById(_compareId!);
+                          _compareId = null;
+                          if (left != null) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => FerretDiffView(
+                                  left: left,
+                                  right: entry,
+                                ),
+                              ),
+                            );
+                          }
                         }
-                        _filter = _filter.copyWith(methods: next);
                       });
                     },
                   ),
-                  const SizedBox(width: 8),
+                  FerretTimeline(
+                    entries: entries,
+                    slowThreshold: widget.config.slowThreshold,
+                    onTap: _openDetail,
+                  ),
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: TabBarView(
-              controller: _tabs,
-              children: [
-                _CallsList(
-                  entries: entries,
-                  slowThreshold: widget.config.slowThreshold,
-                  compareId: _compareId,
-                  onOpen: _openDetail,
-                  onToggleCompare: (entry) {
-                    setState(() {
-                      if (_compareId == entry.id) {
-                        _compareId = null;
-                      } else if (_compareId == null) {
-                        _compareId = entry.id;
-                      } else {
-                        final left = widget.store.getById(_compareId!);
-                        _compareId = null;
-                        if (left != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => FerretDiffView(
-                                left: left,
-                                right: entry,
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    });
-                  },
-                ),
-                FerretTimeline(
-                  entries: entries,
-                  slowThreshold: widget.config.slowThreshold,
-                  onTap: _openDetail,
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -369,6 +339,88 @@ class _FerretDashboardState extends State<FerretDashboard>
           ),
         );
       },
+    );
+  }
+}
+
+class _SearchPanel extends StatelessWidget {
+  const _SearchPanel({
+    required this.searchController,
+    required this.searchFocus,
+    required this.filter,
+    required this.onQueryChanged,
+    required this.onFilterChanged,
+  });
+
+  final TextEditingController searchController;
+  final FocusNode searchFocus;
+  final FerretFilter filter;
+  final ValueChanged<String> onQueryChanged;
+  final ValueChanged<FerretFilter> onFilterChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: searchController,
+            focusNode: searchFocus,
+            decoration: InputDecoration(
+              hintText: 'Search method, URL, status…',
+              prefixIcon: const Icon(Icons.search_rounded),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              isDense: true,
+            ),
+            onChanged: onQueryChanged,
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: Row(
+            children: [
+              FilterChip(
+                label: const Text('Failed'),
+                selected: filter.failedOnly,
+                onSelected: (v) {
+                  onFilterChanged(filter.copyWith(failedOnly: v));
+                },
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('Slow'),
+                selected: filter.slowOnly,
+                onSelected: (v) {
+                  onFilterChanged(filter.copyWith(slowOnly: v));
+                },
+              ),
+              const SizedBox(width: 8),
+              for (final method
+                  in const ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) ...[
+                FilterChip(
+                  label: Text(method),
+                  selected: filter.methods.contains(method),
+                  onSelected: (v) {
+                    final next = {...filter.methods};
+                    if (v) {
+                      next.add(method);
+                    } else {
+                      next.remove(method);
+                    }
+                    onFilterChanged(filter.copyWith(methods: next));
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
