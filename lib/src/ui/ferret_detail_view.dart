@@ -55,7 +55,7 @@ class FerretDetailView extends StatelessWidget {
                   );
                 }
               },
-              icon: const Icon(Icons.terminal_rounded),
+              icon: const Icon(Icons.copy_rounded),
             ),
           ],
           bottom: const TabBar(
@@ -110,7 +110,9 @@ class _OverviewTab extends StatelessWidget {
       children: [
         SelectableText(
           entry.url.toString(),
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -141,17 +143,28 @@ class _OverviewTab extends StatelessWidget {
         ),
         if (entry.error != null) ...[
           const SizedBox(height: 16),
-          Text('Error', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Error',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
           const SizedBox(height: 8),
           SelectableText(
             entry.error!,
-            style: TextStyle(color: scheme.error, fontFamily: 'monospace'),
+            style: TextStyle(color: scheme.error),
           ),
         ],
         const SizedBox(height: 16),
-        Text('Started', style: Theme.of(context).textTheme.titleSmall),
+        Text(
+          'Started',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
         const SizedBox(height: 4),
         Text(entry.startTime.toIso8601String()),
+        SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
       ],
     );
   }
@@ -178,54 +191,54 @@ class _HeadersBodyTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Headers', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 160),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListView(
-                padding: const EdgeInsets.all(12),
-                children: [
-                  if (headers.isEmpty)
-                    const Text('(none)')
-                  else
-                    for (final e in headers.entries)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: SelectableText(
-                          '${e.key}: ${e.value}',
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12.5,
+    final scheme = Theme.of(context).colorScheme;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final sectionStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+        );
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + bottomInset),
+      children: [
+        Text('Headers', style: sectionStyle),
+        const SizedBox(height: 8),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: headers.isEmpty
+                ? const Text('(none)')
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final e in headers.entries)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: FerretHeaderLine(
+                            name: e.key,
+                            value: e.value,
                           ),
                         ),
-                      ),
-                ],
-              ),
-            ),
+                    ],
+                  ),
           ),
-          if (error != null) ...[
-            const SizedBox(height: 12),
-            Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ],
-          const SizedBox(height: 16),
-          Text('Body', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Expanded(child: FerretBodyViewer(body: body)),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          SelectableText(
+            error!,
+            style: TextStyle(color: scheme.error),
+          ),
         ],
-      ),
+        const SizedBox(height: 16),
+        Text('Body', style: sectionStyle),
+        const SizedBox(height: 8),
+        FerretBodyViewer(body: body),
+      ],
     );
   }
 }
