@@ -138,7 +138,7 @@ cd example
 flutter run
 ```
 
-The example fires real requests with Dio, `package:http`, and `dart:io` against a public API so you can see each client in the inspector.
+The example is a small social feed: it loads posts/users/comments over Dio, with menu actions for `package:http`, `dart:io`, and a deliberate 404 so you can inspect every client in Ferret.
 
 ## API surface
 

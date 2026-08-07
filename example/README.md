@@ -1,17 +1,16 @@
 # Ferret example
 
-Minimal demo app for [`ferret`](https://pub.dev/packages/ferret).
+A simple social-feed demo for [`ferret`](https://pub.dev/packages/ferret).
 
 ## Run
 
 ```bash
-# from repo root, with Flutter 3.44.1+ (FVM recommended)
-# Android builds need JDK 17 or 21 (Gradle 8.14 does not support Java 25)
+# JDK 17 or 21 recommended for Android (Gradle 8.14)
 cd example
 flutter run
 ```
 
-If Gradle fails with `IllegalArgumentException: 25.0.2`, point Flutter at JDK 21:
+If Gradle fails with `IllegalArgumentException: 25.0.2`:
 
 ```bash
 flutter config --jdk-dir=/usr/lib/jvm/temurin-21-jdk-amd64
@@ -19,11 +18,9 @@ flutter config --jdk-dir=/usr/lib/jvm/temurin-21-jdk-amd64
 
 ## What it shows
 
-Buttons fire real HTTP calls via:
+- Loads posts + users from `jsonplaceholder.typicode.com` (social feed UI)
+- Tap a post to load comments
+- FAB creates a post (Dio POST)
+- Menu runs extra demos: `package:http`, `dart:io`, and a deliberate 404
 
-1. **Dio** — GET / POST
-2. **package:http** — GET
-3. **dart:io** — GET
-4. A deliberate **404** so you can see failed-call highlighting
-
-Open the Ferret bubble to inspect method, URL, status, headers, and bodies.
+Open the Ferret floating count button to inspect every request.
