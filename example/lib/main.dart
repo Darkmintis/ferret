@@ -25,6 +25,7 @@ class FerretExampleApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ferret Example',
       debugShowCheckedModeBanner: false,
+      navigatorKey: Ferret.navigatorKey,
       builder: Ferret.builder,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
