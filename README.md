@@ -81,7 +81,7 @@ Ferret.install(
   config: const FerretConfig(
     enabled: true,              // master switch (debug/profile)
     enableInRelease: false,     // set true only when you intentionally need release
-    showNotification: true,     // ongoing notification with live counts
+    showNotification: true,     // live counts while app is open (hidden in background)
     maxEntries: 500,            // ring buffer size
     captureBody: true,
     startMinimized: true,
@@ -111,7 +111,7 @@ When disabled, Ferret does not intercept, store, or render anything.
 ### Floating bubble + notification
 
 - **Bubble** is a simple circular button with the **API call count** only. It flashes **red** briefly when a new failed call arrives. **Tap** opens the full inspector (requests, responses, errors, export).
-- **Notification** (default on) shows a live status line like `24 calls · 3 failed · 1 slow`. Set `showNotification: false` to disable. On Android 13+ the host app needs `POST_NOTIFICATIONS`.
+- **Notification** (default on) shows a live status line like `24 calls · 3 failed · 1 slow` **only while the app is in the foreground**. It is cleared when the app is backgrounded or closed. Set `showNotification: false` to disable. On Android 13+ the host app needs `POST_NOTIFICATIONS`.
 
 ## Features
 
@@ -138,7 +138,7 @@ cd example
 flutter run
 ```
 
-The example is a small social feed: it loads posts/users/comments over Dio, with menu actions for `package:http`, `dart:io`, and a deliberate 404 so you can inspect every client in Ferret.
+The example has four use-case buttons (Dio GET, Dio POST, package:http, and a red 404) so you can exercise Ferret’s Overview / Request / Response / Error tabs.
 
 ## API surface
 

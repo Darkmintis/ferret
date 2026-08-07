@@ -1,14 +1,13 @@
 import 'package:ferret/ferret.dart';
 import 'package:flutter/material.dart';
 
-import 'screens/feed_screen.dart';
+import 'screens/home_screen.dart';
 import 'services/feed_repository.dart';
 import 'theme/app_theme.dart';
 
 class FerretExampleApp extends StatefulWidget {
   const FerretExampleApp({super.key, this.repository});
 
-  /// Injected in tests; created internally for normal runs.
   final FeedRepository? repository;
 
   @override
@@ -31,13 +30,13 @@ class _FerretExampleAppState extends State<FerretExampleApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ferret Feed',
+      title: 'Ferret Demo',
       debugShowCheckedModeBanner: false,
       navigatorKey: Ferret.navigatorKey,
       builder: Ferret.builder,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      home: FeedScreen(repository: _repository),
+      home: HomeScreen(repository: _repository),
     );
   }
 }

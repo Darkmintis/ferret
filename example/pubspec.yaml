@@ -1,5 +1,5 @@
 name: ferret_example
-description: Social-feed demo for Ferret — Dio, http, and dart:io against a public API.
+description: Minimal Ferret demo — Dio, http, and dart:io against a public API.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -13,7 +13,6 @@ dependencies:
     path: ../
   dio: ^5.9.0
   http: ^1.5.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

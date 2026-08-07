@@ -1,15 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:ferret/ferret.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/comment.dart';
 import '../models/post.dart';
-import '../models/user.dart';
 
-/// Loads feed data and fires extra client demos for Ferret.
+/// Demo API helpers — each method maps to a Ferret use case.
 class FeedRepository {
   FeedRepository({
     Dio? dio,
@@ -29,7 +24,8 @@ class FeedRepository {
   final Dio _dio;
   final http.Client _http;
 
-  Future<List<Post>> fetchPosts({int limit = 20}) async {
+  /// Use case: successful Dio GET with a response body.
+  Future<List<Post>> loadPosts({int limit = 5}) async {
     final response = await _dio.get<List<dynamic>>('/posts');
     final list = response.data ?? const <dynamic>[];
     return list
@@ -38,69 +34,21 @@ class FeedRepository {
         .toList(growable: false);
   }
 
-  Future<User> fetchUser(int userId) async {
-    final response = await _dio.get<Map<String, dynamic>>('/users/$userId');
-    return User.fromJson(response.data!);
-  }
-
-  Future<Map<int, User>> fetchUsers() async {
-    final response = await _dio.get<List<dynamic>>('/users');
-    final list = response.data ?? const <dynamic>[];
-    final map = <int, User>{};
-    for (final item in list) {
-      final user = User.fromJson(Map<String, dynamic>.from(item as Map));
-      map[user.id] = user;
-    }
-    return map;
-  }
-
-  Future<Post> fetchPost(int id) async {
-    final response = await _dio.get<Map<String, dynamic>>('/posts/$id');
-    return Post.fromJson(response.data!);
-  }
-
-  Future<List<Comment>> fetchComments(int postId) async {
-    final response = await _dio.get<List<dynamic>>('/posts/$postId/comments');
-    final list = response.data ?? const <dynamic>[];
-    return list
-        .map((e) => Comment.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList(growable: false);
-  }
-
-  Future<Post> createPost({
-    required String title,
-    required String body,
-    int userId = 1,
-  }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+  /// Use case: Dio POST with a request body.
+  Future<void> createPost() async {
+    await _dio.post<dynamic>(
       '/posts',
-      data: {'title': title, 'body': body, 'userId': userId},
-    );
-    return Post.fromJson(response.data!);
-  }
-
-  /// package:http sample — still captured by Ferret.
-  Future<Map<String, dynamic>> fetchTodoSample() async {
-    final response = await _http.get(Uri.parse('$baseUrl/todos/1'));
-    return Map<String, dynamic>.from(
-      jsonDecode(response.body) as Map,
+      data: {'title': 'ferret', 'body': 'hello', 'userId': 1},
     );
   }
 
-  /// dart:io sample — still captured by Ferret.
-  Future<void> fetchUserViaDartIo({int userId = 1}) async {
-    final client = HttpClient();
-    try {
-      final request =
-          await client.getUrl(Uri.parse('$baseUrl/users/$userId'));
-      final response = await request.close();
-      await response.drain<void>();
-    } finally {
-      client.close(force: true);
-    }
+  /// Use case: package:http client (still captured by Ferret).
+  Future<void> httpGet() async {
+    await _http.get(Uri.parse('$baseUrl/todos/1'));
   }
 
-  Future<void> triggerNotFound() async {
+  /// Use case: failed call → Error tab in Ferret.
+  Future<void> triggerError() async {
     await _dio.get<dynamic>('/this-does-not-exist-404');
   }
 

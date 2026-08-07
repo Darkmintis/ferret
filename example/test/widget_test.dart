@@ -5,14 +5,13 @@ import 'package:dio/dio.dart';
 import 'package:ferret/ferret.dart';
 import 'package:ferret_example/app.dart';
 import 'package:ferret_example/models/post.dart';
-import 'package:ferret_example/models/user.dart';
 import 'package:ferret_example/services/feed_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
-  testWidgets('example app builds a feed', (tester) async {
+  testWidgets('example app loads posts from use-case button', (tester) async {
     Ferret.install(config: const FerretConfig(showNotification: false));
 
     final repository = FeedRepository(
@@ -21,18 +20,20 @@ void main() {
           posts: const [
             Post(id: 1, userId: 1, title: 'Hello Ferret', body: 'Feed works.'),
           ],
-          users: const [
-            User(id: 1, name: 'Jane Doe', username: 'jane'),
-          ],
         ),
       httpClient: MockClient((_) async => http.Response('{}', 200)),
     );
 
     await tester.pumpWidget(FerretExampleApp(repository: repository));
     await tester.pump();
+
+    expect(find.text('Load posts'), findsOneWidget);
+    expect(find.text('Trigger error'), findsOneWidget);
+
+    await tester.tap(find.text('Load posts'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Ferret Feed'), findsOneWidget);
     expect(find.text('Hello Ferret'), findsOneWidget);
 
     repository.dispose();
@@ -40,10 +41,9 @@ void main() {
 }
 
 class _FakeAdapter implements HttpClientAdapter {
-  _FakeAdapter({required this.posts, required this.users});
+  _FakeAdapter({required this.posts});
 
   final List<Post> posts;
-  final List<User> users;
 
   @override
   void close({bool force = false}) {}
@@ -54,9 +54,8 @@ class _FakeAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    final path = options.uri.path;
     Object payload = const <Object>[];
-    if (path.endsWith('/posts') && options.method == 'GET') {
+    if (options.uri.path.endsWith('/posts') && options.method == 'GET') {
       payload = [
         for (final post in posts)
           {
@@ -64,15 +63,6 @@ class _FakeAdapter implements HttpClientAdapter {
             'userId': post.userId,
             'title': post.title,
             'body': post.body,
-          },
-      ];
-    } else if (path.endsWith('/users') && options.method == 'GET') {
-      payload = [
-        for (final user in users)
-          {
-            'id': user.id,
-            'name': user.name,
-            'username': user.username,
           },
       ];
     }
