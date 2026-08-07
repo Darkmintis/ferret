@@ -51,7 +51,7 @@ class FerretDiffView extends StatelessWidget {
         const SizedBox(height: 8),
         SelectableText(
           '${entry.responseBody ?? '(empty)'}',
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
     );
