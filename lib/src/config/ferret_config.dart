@@ -4,15 +4,18 @@ import 'http_client_type.dart';
 ///
 /// Defaults are safe for day-one install: on in debug/profile, off in release
 /// unless [enableInRelease] is explicitly set.
+///
+/// When Ferret is active in a release build, the console banner and red
+/// on-screen tag are **always** shown and cannot be disabled.
 class FerretConfig {
   /// Master switch. When `false`, Ferret is a no-op even in debug.
   final bool enabled;
 
   /// Explicit opt-in to run in release builds. Default `false`.
+  ///
+  /// When `true`, Ferret always prints a loud console warning and shows a
+  /// permanent red "FERRET ACTIVE" tag. That warning cannot be turned off.
   final bool enableInRelease;
-
-  /// When active in release, print a console banner and show an on-screen tag.
-  final bool showReleaseWarning;
 
   /// Maximum captured calls retained in memory (ring buffer).
   final int maxEntries;
@@ -35,7 +38,6 @@ class FerretConfig {
   const FerretConfig({
     this.enabled = true,
     this.enableInRelease = false,
-    this.showReleaseWarning = true,
     this.maxEntries = 500,
     this.captureBody = true,
     this.startMinimized = true,
@@ -51,7 +53,6 @@ class FerretConfig {
   FerretConfig copyWith({
     bool? enabled,
     bool? enableInRelease,
-    bool? showReleaseWarning,
     int? maxEntries,
     bool? captureBody,
     bool? startMinimized,
@@ -63,7 +64,6 @@ class FerretConfig {
     return FerretConfig(
       enabled: enabled ?? this.enabled,
       enableInRelease: enableInRelease ?? this.enableInRelease,
-      showReleaseWarning: showReleaseWarning ?? this.showReleaseWarning,
       maxEntries: maxEntries ?? this.maxEntries,
       captureBody: captureBody ?? this.captureBody,
       startMinimized: startMinimized ?? this.startMinimized,
@@ -78,7 +78,6 @@ class FerretConfig {
     return 'FerretConfig('
         'enabled: $enabled, '
         'enableInRelease: $enableInRelease, '
-        'showReleaseWarning: $showReleaseWarning, '
         'maxEntries: $maxEntries, '
         'captureBody: $captureBody, '
         'startMinimized: $startMinimized, '

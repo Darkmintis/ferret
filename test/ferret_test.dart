@@ -70,16 +70,15 @@ void main() {
       );
       expect(on.active, isTrue);
       expect(on.showReleaseWarning, isTrue);
+    });
 
-      final quiet = FerretActivation.resolve(
-        const FerretConfig(
-          enableInRelease: true,
-          showReleaseWarning: false,
-        ),
+    test('release warning cannot be disabled when active in release', () {
+      final on = FerretActivation.resolve(
+        const FerretConfig(enableInRelease: true),
         isReleaseMode: true,
       );
-      expect(quiet.active, isTrue);
-      expect(quiet.showReleaseWarning, isFalse);
+      expect(on.active, isTrue);
+      expect(on.showReleaseWarning, isTrue);
     });
   });
 

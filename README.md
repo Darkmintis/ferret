@@ -11,10 +11,16 @@ Ferret captures Dio, `package:http`, and `dart:io` traffic into a Material 3 ins
 
 ## Why Ferret
 
-| | Alice / others | Ferret |
+Most Flutter HTTP inspectors are **debug-only**. They are not designed to run safely in release builds.
+
+Ferret is different:
+
+| | Typical inspectors | Ferret |
 |---|---|---|
-| Release builds | Easy to leave on by accident | **Off by default** — true no-op |
-| Forced on in release | Easy to miss | Loud console banner + permanent red tag |
+| Debug / profile | On | On by default |
+| Release builds | Usually unavailable or unsafe | **Off by default** (true no-op) |
+| Opt-in release mode | Rare / not supported | Supported via `enableInRelease: true` |
+| Release warning | Often missing | **Always on** — console banner + permanent red tag (cannot be disabled) |
 | Data in-app | Often masked | **Full raw** bodies & headers |
 | Setup | Wire every client | `Ferret.install()` + `builder: Ferret.builder` |
 
@@ -73,8 +79,7 @@ final client = Ferret.wrapClient(http.Client());
 Ferret.install(
   config: const FerretConfig(
     enabled: true,              // master switch (debug/profile)
-    enableInRelease: false,     // must be explicit for release
-    showReleaseWarning: true,   // banner + red "FERRET ACTIVE" tag
+    enableInRelease: false,     // set true only when you intentionally need release
     maxEntries: 500,            // ring buffer size
     captureBody: true,
     startMinimized: true,
@@ -89,13 +94,15 @@ Ferret.install(
 );
 ```
 
-### Release safety
+### Debug and release behavior
 
 | Mode | Behavior |
 |---|---|
 | Debug / Profile | On when `enabled: true` (default) |
 | Release | **Fully off** unless `enableInRelease: true` |
-| Release + forced on | Console warning + permanent on-screen tag |
+| Release + `enableInRelease: true` | On, with a loud console warning **and** a permanent red **FERRET ACTIVE** tag |
+
+The release warning is **not configurable**. If Ferret is running in a release build, the banner and red tag always appear so it is impossible to ship capture silently.
 
 When disabled, Ferret does not intercept, store, or render anything.
 

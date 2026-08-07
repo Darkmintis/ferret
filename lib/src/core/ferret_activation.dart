@@ -15,6 +15,8 @@ class FerretActivation {
   final bool active;
 
   /// Whether to print the release banner and show the red on-screen tag.
+  ///
+  /// Always `true` when Ferret is active in a release build. Not configurable.
   final bool showReleaseWarning;
 
   /// Compute activation from [config] and build mode.
@@ -31,9 +33,10 @@ class FerretActivation {
           showReleaseWarning: false,
         );
       }
-      return FerretActivation(
+      // Release + explicit opt-in: warning is permanent and cannot be disabled.
+      return const FerretActivation(
         active: true,
-        showReleaseWarning: config.showReleaseWarning,
+        showReleaseWarning: true,
       );
     }
 
