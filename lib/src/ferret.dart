@@ -17,6 +17,7 @@ import 'export/har_exporter.dart';
 import 'export/mirror_server.dart';
 import 'export/session_exporter.dart';
 import 'export/share_exporter.dart';
+import 'export/svg_exporter.dart';
 import 'interceptors/dart_io_override.dart';
 import 'interceptors/dio_interceptor.dart';
 import 'interceptors/http_wrapper.dart';
@@ -246,10 +247,44 @@ class Ferret {
     return const CurlExporter().export(entry, redact: redact);
   }
 
+  /// Export one call as an SVG of a detail tab (full content).
+  static String toSvgPane(
+    FerretEntry entry, {
+    FerretSvgPane pane = FerretSvgPane.overview,
+    bool redact = false,
+  }) {
+    return const SvgExporter().exportEntry(
+      entry,
+      pane: pane,
+      redact: redact,
+    );
+  }
+
+  /// Export one or more entries as SVG summary cards.
+  static String toSvg(
+    List<FerretEntry> entries, {
+    bool redact = false,
+  }) {
+    return const SvgExporter().export(entries, redact: redact);
+  }
+
   /// Export the session as HAR JSON.
   static String toHar({bool redact = false}) {
     final entries = _store?.entries ?? const <FerretEntry>[];
     return const HarExporter().export(entries, redact: redact);
+  }
+
+  /// Save one call's detail-tab SVG to device storage. Returns the file path.
+  static Future<String> saveSvgPane(
+    FerretEntry entry, {
+    FerretSvgPane pane = FerretSvgPane.overview,
+    bool redact = false,
+  }) {
+    return const ShareExporter().saveEntrySvg(
+      entry,
+      pane: pane,
+      redact: redact,
+    );
   }
 
   /// Share the session via the platform share sheet.
@@ -262,6 +297,24 @@ class Ferret {
       entries,
       config: _config,
       format: format,
+      redact: redact,
+    );
+  }
+
+  /// Share one captured call via the platform share sheet.
+  ///
+  /// For SVG, [pane] chooses which detail tab to render in full.
+  static Future<void> shareEntry(
+    FerretEntry entry, {
+    bool redact = false,
+    FerretExportFormat format = FerretExportFormat.svg,
+    FerretSvgPane pane = FerretSvgPane.overview,
+  }) async {
+    await const ShareExporter().shareEntry(
+      entry,
+      config: _config,
+      format: format,
+      pane: pane,
       redact: redact,
     );
   }

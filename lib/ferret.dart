@@ -12,6 +12,7 @@ export 'src/core/ferret_store.dart';
 export 'src/export/curl_exporter.dart';
 export 'src/export/har_exporter.dart';
 export 'src/export/session_exporter.dart';
+export 'src/export/svg_exporter.dart';
 export 'src/ferret.dart';
 export 'src/ui/ferret_dashboard.dart';
 export 'src/ui/ferret_detail_view.dart';

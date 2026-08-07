@@ -204,6 +204,7 @@ class _FerretDashboardState extends State<FerretDashboard>
           return FerretDetailView(
             entry: entry,
             slowThreshold: widget.config.slowThreshold,
+            config: widget.config,
             onReplay: () => widget.onReplay(entry),
             onCompare: () {
               setState(() => _compareId = entry.id);
@@ -224,8 +225,15 @@ class _FerretDashboardState extends State<FerretDashboard>
   }
 
   Future<void> _openExportSheet(BuildContext context) async {
-    const exporter = ShareExporter();
     final entries = widget.store.entries;
+    if (entries.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing to export')),
+      );
+      return;
+    }
+
+    const exporter = ShareExporter();
     final messenger = ScaffoldMessenger.of(context);
 
     await showModalBottomSheet<void>(
@@ -238,7 +246,25 @@ class _FerretDashboardState extends State<FerretDashboard>
             children: [
               const ListTile(
                 title: Text('Export / share'),
-                subtitle: Text('HAR · JSON · Text · Markdown'),
+                subtitle: Text('SVG · HAR · JSON · Text · Markdown'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.download_rounded),
+                title: const Text('Save SVG'),
+                subtitle: const Text('Writes session cards as .svg on device'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  try {
+                    final path = await exporter.saveSessionSvg(entries);
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('SVG saved\n$path')),
+                    );
+                  } on Object catch (e) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Could not save SVG: $e')),
+                    );
+                  }
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.archive_outlined),
@@ -444,8 +470,13 @@ class _CallsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
       return const Center(
-        child: Text('No HTTP calls yet.\nFire a request to see it here.'),
-        // textAlign via DefaultTextStyle? Center doesn't set textAlign
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32),
+          child: Text(
+            'No HTTP calls yet.\nFire a request to see it here.',
+            textAlign: TextAlign.center,
+          ),
+        ),
       );
     }
 

@@ -4,7 +4,7 @@ import '../config/ferret_config.dart';
 import '../core/ferret_entry.dart';
 import '../core/ferret_stats.dart';
 
-/// Export formats for sharing a captured session.
+/// Export formats for sharing a captured session or call.
 enum FerretExportFormat {
   /// HTTP Archive 1.2 (Chrome DevTools compatible).
   har,
@@ -17,6 +17,9 @@ enum FerretExportFormat {
 
   /// Markdown report for chats / docs.
   markdown,
+
+  /// Visual SVG card stack for the session share sheet.
+  svg,
 }
 
 /// Builds session exports in multiple formats.
@@ -39,6 +42,8 @@ class SessionExporter {
         return _text(entries, config: config, redact: redact);
       case FerretExportFormat.markdown:
         return _markdown(entries, config: config, redact: redact);
+      case FerretExportFormat.svg:
+        throw UnsupportedError('Use SvgExporter for SVG');
     }
   }
 

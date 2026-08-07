@@ -149,6 +149,52 @@ void main() {
     });
   });
 
+  group('SvgExporter', () {
+    test('builds an svg card for a call', () {
+      final svg = const SvgExporter().export(
+        [
+          _entry('1', status: 200, method: 'GET').copyWith(
+            endTime: DateTime.now(),
+            responseBody: '{"ok":true}',
+          ),
+        ],
+      );
+      expect(svg, contains('<svg'));
+      expect(svg, contains('GET'));
+      expect(svg, contains('200'));
+      expect(svg, contains('Ferret'));
+    });
+
+    test('builds a full response pane svg', () {
+      final svg = const SvgExporter().exportEntry(
+        _entry('1', status: 200, method: 'GET').copyWith(
+          endTime: DateTime.now(),
+          responseHeaders: const {
+            'content-type': 'application/json',
+          },
+          responseBody: '{"ok":true,"items":[1,2,3]}',
+        ),
+        pane: FerretSvgPane.response,
+      );
+      expect(svg, contains('<svg'));
+      expect(svg, contains('Response'));
+      expect(svg, contains('Headers:'));
+      expect(svg, contains('Body:'));
+      expect(svg, contains('content-type'));
+      expect(svg, contains('&quot;ok&quot;'));
+    });
+
+    test('builds an overview pane svg', () {
+      final svg = const SvgExporter().exportEntry(
+        _entry('1', status: 200, method: 'POST'),
+        pane: FerretSvgPane.overview,
+      );
+      expect(svg, contains('Overview'));
+      expect(svg, contains('Started'));
+      expect(svg, contains('POST'));
+    });
+  });
+
   group('CurlExporter', () {
     test('builds a curl command', () {
       final curl = const CurlExporter().export(

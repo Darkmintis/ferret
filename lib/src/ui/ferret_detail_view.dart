@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../config/ferret_config.dart';
 import '../core/ferret_entry.dart';
 import '../export/curl_exporter.dart';
+import '../export/session_exporter.dart';
+import '../export/share_exporter.dart';
+import '../export/svg_exporter.dart';
 import 'ferret_body_viewer.dart';
 import 'ferret_theme.dart';
 
@@ -12,14 +16,206 @@ class FerretDetailView extends StatelessWidget {
     super.key,
     required this.entry,
     required this.slowThreshold,
+    this.config = const FerretConfig(),
     this.onReplay,
     this.onCompare,
   });
 
   final FerretEntry entry;
   final Duration slowThreshold;
+  final FerretConfig config;
   final VoidCallback? onReplay;
   final VoidCallback? onCompare;
+
+  Future<void> _openExportSheet(
+    BuildContext context, {
+    required FerretSvgPane pane,
+  }) async {
+    const exporter = ShareExporter();
+    final messenger = ScaffoldMessenger.of(context);
+    final paneLabel = switch (pane) {
+      FerretSvgPane.overview => 'Overview',
+      FerretSvgPane.request => 'Request',
+      FerretSvgPane.response => 'Response',
+      FerretSvgPane.error => 'Error',
+    };
+
+    Future<void> exportSvg({required bool redact}) async {
+      if (!_paneHasContent(entry, pane)) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Nothing to export')),
+        );
+        return;
+      }
+      try {
+        final path = await exporter.saveEntrySvg(
+          entry,
+          pane: pane,
+          redact: redact,
+        );
+        messenger.showSnackBar(
+          SnackBar(content: Text('SVG saved\n$path')),
+        );
+      } on Object catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Could not save SVG: $e')),
+        );
+      }
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              ListTile(
+                title: const Text('Export / share call'),
+                subtitle: Text('${entry.method} · $paneLabel tab'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.download_rounded),
+                title: const Text('Save SVG'),
+                subtitle: Text('Writes $paneLabel tab as .svg on device'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exportSvg(redact: false);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.archive_outlined),
+                title: const Text('Share HAR'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareEntry(
+                    entry,
+                    config: config,
+                    format: FerretExportFormat.har,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.data_object_rounded),
+                title: const Text('Share JSON'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareEntry(
+                    entry,
+                    config: config,
+                    format: FerretExportFormat.json,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.notes_rounded),
+                title: const Text('Share text'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareEntry(
+                    entry,
+                    config: config,
+                    format: FerretExportFormat.text,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.article_outlined),
+                title: const Text('Share Markdown'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareEntry(
+                    entry,
+                    config: config,
+                    format: FerretExportFormat.markdown,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.terminal_rounded),
+                title: const Text('Share cURL'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareCurl(entry);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.copy_rounded),
+                title: const Text('Copy SVG'),
+                subtitle: Text('Full $paneLabel markup'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  if (!_paneHasContent(entry, pane)) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Nothing to export')),
+                    );
+                    return;
+                  }
+                  await exporter.copyEntry(
+                    entry,
+                    config: config,
+                    format: FerretExportFormat.svg,
+                    pane: pane,
+                  );
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('$paneLabel SVG copied')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy_all_rounded),
+                title: const Text('Copy JSON'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.copyEntry(
+                    entry,
+                    config: config,
+                    format: FerretExportFormat.json,
+                  );
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('JSON copied')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.shield_outlined),
+                title: const Text('Save SVG (redacted)'),
+                subtitle: const Text('Masks query + sensitive headers'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exportSvg(redact: true);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  static bool _paneHasContent(FerretEntry entry, FerretSvgPane pane) {
+    return switch (pane) {
+      FerretSvgPane.overview => true,
+      FerretSvgPane.request =>
+        entry.requestHeaders.isNotEmpty ||
+            FerretBodyViewer.formatBody(entry.requestBody).isNotEmpty,
+      FerretSvgPane.response =>
+        (entry.responseHeaders?.isNotEmpty ?? false) ||
+            FerretBodyViewer.formatBody(entry.responseBody).isNotEmpty,
+      FerretSvgPane.error => entry.error?.trim().isNotEmpty ?? false,
+    };
+  }
+
+  static FerretSvgPane _paneFromIndex(int index) {
+    return switch (index) {
+      1 => FerretSvgPane.request,
+      2 => FerretSvgPane.response,
+      3 => FerretSvgPane.error,
+      _ => FerretSvgPane.overview,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,66 +228,80 @@ class FerretDetailView extends StatelessWidget {
 
         return DefaultTabController(
           length: 4,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text('${entry.method} ${entry.statusCode ?? '…'}'),
-              actions: [
-                if (onCompare != null)
-                  IconButton(
-                    tooltip: 'Compare',
-                    onPressed: onCompare,
-                    icon: const Icon(Icons.compare_arrows_rounded),
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text('${entry.method} ${entry.statusCode ?? '…'}'),
+                  actions: [
+                    IconButton(
+                      tooltip: 'Export / share',
+                      onPressed: () => _openExportSheet(
+                        context,
+                        pane: _paneFromIndex(
+                          DefaultTabController.of(context).index,
+                        ),
+                      ),
+                      icon: const Icon(Icons.ios_share_rounded),
+                    ),
+                    if (onCompare != null)
+                      IconButton(
+                        tooltip: 'Compare',
+                        onPressed: onCompare,
+                        icon: const Icon(Icons.compare_arrows_rounded),
+                      ),
+                    if (onReplay != null)
+                      IconButton(
+                        tooltip: 'Replay request',
+                        onPressed: onReplay,
+                        icon: const Icon(Icons.replay_rounded),
+                      ),
+                    IconButton(
+                      tooltip: 'Copy as cURL',
+                      onPressed: () async {
+                        final curl = const CurlExporter().export(entry);
+                        await Clipboard.setData(ClipboardData(text: curl));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('cURL copied')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy_rounded),
+                    ),
+                  ],
+                  bottom: const TabBar(
+                    tabs: [
+                      Tab(text: 'Overview'),
+                      Tab(text: 'Request'),
+                      Tab(text: 'Response'),
+                      Tab(text: 'Error'),
+                    ],
                   ),
-                if (onReplay != null)
-                  IconButton(
-                    tooltip: 'Replay',
-                    onPressed: onReplay,
-                    icon: const Icon(Icons.replay_rounded),
-                  ),
-                IconButton(
-                  tooltip: 'Copy as cURL',
-                  onPressed: () async {
-                    final curl = const CurlExporter().export(entry);
-                    await Clipboard.setData(ClipboardData(text: curl));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('cURL copied')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.copy_rounded),
                 ),
-              ],
-              bottom: const TabBar(
-                tabs: [
-                  Tab(text: 'Overview'),
-                  Tab(text: 'Request'),
-                  Tab(text: 'Response'),
-                  Tab(text: 'Error'),
-                ],
-              ),
-            ),
-            body: TabBarView(
-              children: [
-                _OverviewTab(
-                  entry: entry,
-                  duration: duration,
-                  slow: slow,
-                  scheme: scheme,
+                body: TabBarView(
+                  children: [
+                    _OverviewTab(
+                      entry: entry,
+                      duration: duration,
+                      slow: slow,
+                      scheme: scheme,
+                    ),
+                    _MessageTab(
+                      kind: _MessageKind.request,
+                      headers: entry.requestHeaders,
+                      body: entry.requestBody,
+                    ),
+                    _MessageTab(
+                      kind: _MessageKind.response,
+                      headers: entry.responseHeaders ?? const {},
+                      body: entry.responseBody,
+                    ),
+                    _ErrorTab(error: entry.error),
+                  ],
                 ),
-                _MessageTab(
-                  kind: _MessageKind.request,
-                  headers: entry.requestHeaders,
-                  body: entry.requestBody,
-                ),
-                _MessageTab(
-                  kind: _MessageKind.response,
-                  headers: entry.responseHeaders ?? const {},
-                  body: entry.responseBody,
-                ),
-                _ErrorTab(error: entry.error),
-              ],
-            ),
+              );
+            },
           ),
         );
       },

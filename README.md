@@ -123,7 +123,7 @@ When disabled, Ferret does not intercept, store, or render anything.
 - Search & filters — method, failed-only, slow-only
 - Timeline / waterfall view
 - Side-by-side response diff
-- Export & share: **HAR**, **JSON**, **text**, **Markdown** (+ redacted HAR)
+- Export & share: **SVG** (current detail tab / session cards), **HAR**, **JSON**, **text**, **Markdown** (+ redacted) — session or single call
 - Copy as cURL (per call)
 - Replay a captured request
 - Optional LAN mirror (`mirrorPort`) for desktop viewing
@@ -153,8 +153,11 @@ Ferret.showOverlay(context)    // optional manual overlay
 Ferret.openDashboard()         // opens inspector
 Ferret.clear()
 Ferret.toCurl(entry)
+Ferret.toSvg([entry]) // session summary SVG cards
+Ferret.toSvgPane(entry, pane: FerretSvgPane.response) // full detail-tab SVG
 Ferret.toHar(redact: false)
 Ferret.shareSession(redact: false)
+Ferret.shareEntry(entry, format: FerretExportFormat.svg, pane: FerretSvgPane.response)
 Ferret.replay(entry)
 Ferret.isActive
 ```
