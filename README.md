@@ -80,9 +80,10 @@ Ferret.install(
   config: const FerretConfig(
     enabled: true,              // master switch (debug/profile)
     enableInRelease: false,     // set true only when you intentionally need release
+    showNotification: true,     // ongoing notification with live counts
     maxEntries: 500,            // ring buffer size
     captureBody: true,
-    startMinimized: true,
+    startMinimized: true,       // compact bubble (icon + count)
     clients: {
       HttpClientType.dio,
       HttpClientType.http,
@@ -106,16 +107,22 @@ The release warning is **not configurable**. If Ferret is running in a release b
 
 When disabled, Ferret does not intercept, store, or render anything.
 
+### Floating bubble + notification
+
+- **Bubble** shows the **API call count** (and a red failed badge when needed). **Tap** opens the full inspector (requests, responses, errors, timeline).
+- **Notification** (default on) shows a live status line like `24 calls · 3 failed · 1 slow`. Set `showNotification: false` to disable. On Android 13+ the host app needs `POST_NOTIFICATIONS`.
+
 ## Features
 
-- Floating draggable bubble (tap to open, long-press to minimize)
+- Floating bubble with live call count — tap for full inspector
+- Ongoing notification with calls / failed / slow counts
 - Live call list — method, URL, status, duration, size
 - Raw request/response detail with JSON formatting
 - Search & filters — method, failed-only, slow-only
 - Timeline / waterfall view
 - Side-by-side response diff
-- Copy as cURL
-- HAR export & share session (optional redaction **on export only**)
+- Export & share: **HAR**, **JSON**, **text**, **Markdown** (+ redacted HAR)
+- Copy as cURL (per call)
 - Replay a captured request
 - Optional LAN mirror (`mirrorPort`) for desktop viewing
 

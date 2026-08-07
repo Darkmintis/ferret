@@ -11,6 +11,7 @@ Future<void> main() async {
   Ferret.install(
     config: const FerretConfig(
       startMinimized: false,
+      showNotification: true,
     ),
   );
 

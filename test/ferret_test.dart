@@ -94,6 +94,60 @@ void main() {
     });
   });
 
+  group('FerretStats', () {
+    test('counts failed slow and pending', () {
+      final now = DateTime.now();
+      final entries = [
+        _entry('ok', status: 200).copyWith(
+          startTime: now,
+          endTime: now.add(const Duration(milliseconds: 100)),
+        ),
+        _entry('bad', status: 500).copyWith(
+          startTime: now,
+          endTime: now.add(const Duration(milliseconds: 50)),
+        ),
+        _entry('slow', status: 200).copyWith(
+          startTime: now,
+          endTime: now.add(const Duration(seconds: 3)),
+        ),
+        _entry('pending', status: null),
+      ];
+      final stats = FerretStats.fromEntries(
+        entries,
+        slowThreshold: const Duration(seconds: 2),
+      );
+      expect(stats.total, 4);
+      expect(stats.failed, 1);
+      expect(stats.slow, 1);
+      expect(stats.pending, 1);
+      expect(stats.statusLine, contains('4 calls'));
+      expect(stats.bubbleLabel, '4');
+    });
+  });
+
+  group('SessionExporter', () {
+    test('builds text and json exports', () {
+      const config = FerretConfig();
+      final entries = [
+        _entry('1', status: 200, method: 'GET'),
+      ];
+      final text = const SessionExporter().export(
+        entries,
+        format: FerretExportFormat.text,
+        config: config,
+      );
+      final json = const SessionExporter().export(
+        entries,
+        format: FerretExportFormat.json,
+        config: config,
+      );
+      expect(text, contains('Ferret session'));
+      expect(text, contains('GET'));
+      expect(json, contains('"generator": "ferret"'));
+      expect(json, contains('"total": 1'));
+    });
+  });
+
   group('CurlExporter', () {
     test('builds a curl command', () {
       final curl = const CurlExporter().export(

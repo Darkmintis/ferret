@@ -17,13 +17,18 @@ class FerretConfig {
   /// permanent red "FERRET ACTIVE" tag. That warning cannot be turned off.
   final bool enableInRelease;
 
+  /// Show an ongoing notification with live call / error counts.
+  ///
+  /// Default `true` (Alice-style). Set `false` to disable. No-op on web.
+  final bool showNotification;
+
   /// Maximum captured calls retained in memory (ring buffer).
   final int maxEntries;
 
   /// Capture request/response bodies.
   final bool captureBody;
 
-  /// Floating bubble starts minimized.
+  /// Floating bubble starts as a compact badge (icon + count).
   final bool startMinimized;
 
   /// Which client stacks to intercept.
@@ -38,6 +43,7 @@ class FerretConfig {
   const FerretConfig({
     this.enabled = true,
     this.enableInRelease = false,
+    this.showNotification = true,
     this.maxEntries = 500,
     this.captureBody = true,
     this.startMinimized = true,
@@ -53,6 +59,7 @@ class FerretConfig {
   FerretConfig copyWith({
     bool? enabled,
     bool? enableInRelease,
+    bool? showNotification,
     int? maxEntries,
     bool? captureBody,
     bool? startMinimized,
@@ -64,6 +71,7 @@ class FerretConfig {
     return FerretConfig(
       enabled: enabled ?? this.enabled,
       enableInRelease: enableInRelease ?? this.enableInRelease,
+      showNotification: showNotification ?? this.showNotification,
       maxEntries: maxEntries ?? this.maxEntries,
       captureBody: captureBody ?? this.captureBody,
       startMinimized: startMinimized ?? this.startMinimized,
@@ -78,6 +86,7 @@ class FerretConfig {
     return 'FerretConfig('
         'enabled: $enabled, '
         'enableInRelease: $enableInRelease, '
+        'showNotification: $showNotification, '
         'maxEntries: $maxEntries, '
         'captureBody: $captureBody, '
         'startMinimized: $startMinimized, '

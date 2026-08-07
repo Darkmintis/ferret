@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../config/ferret_config.dart';
 import '../core/ferret_entry.dart';
+import '../core/ferret_stats.dart';
 import '../core/ferret_store.dart';
 import '../export/curl_exporter.dart';
-import '../export/har_exporter.dart';
+import '../export/session_exporter.dart';
 import '../export/share_exporter.dart';
 import 'ferret_detail_view.dart';
 import 'ferret_diff_view.dart';
@@ -65,50 +66,36 @@ class _FerretDashboardState extends State<FerretDashboard>
   @override
   Widget build(BuildContext context) {
     final entries = _visible;
+    final stats = FerretStats.fromStore(
+      widget.store.entries,
+      widget.config,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ferret'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Ferret'),
+            Text(
+              stats.statusLine,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            tooltip: 'Copy HAR',
-            onPressed: () async {
-              final har = const HarExporter().export(widget.store.entries);
-              await Clipboard.setData(ClipboardData(text: har));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('HAR copied')),
-                );
-              }
-            },
-            icon: const Icon(Icons.code_rounded),
-          ),
-          IconButton(
-            tooltip: 'Share session',
-            onPressed: () async {
-              await const ShareExporter().shareSession(
-                widget.store.entries,
-                redact: false,
-              );
-            },
+            tooltip: 'Export / share',
+            onPressed: () => _openExportSheet(context),
             icon: const Icon(Icons.ios_share_rounded),
           ),
           PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'share_redacted') {
-                await const ShareExporter().shareSession(
-                  widget.store.entries,
-                  redact: true,
-                );
-              } else if (value == 'clear') {
+            onSelected: (value) {
+              if (value == 'clear') {
                 widget.onClear?.call();
               }
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'share_redacted',
-                child: Text('Share (redacted)'),
-              ),
               PopupMenuItem(
                 value: 'clear',
                 child: Text('Clear all'),
@@ -255,6 +242,125 @@ class _FerretDashboardState extends State<FerretDashboard>
           },
         ),
       ),
+    );
+  }
+
+  Future<void> _openExportSheet(BuildContext context) async {
+    const exporter = ShareExporter();
+    final entries = widget.store.entries;
+    final messenger = ScaffoldMessenger.of(context);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              const ListTile(
+                title: Text('Export / share'),
+                subtitle: Text('HAR · JSON · Text · Markdown'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.archive_outlined),
+                title: const Text('Share HAR'),
+                subtitle: const Text('Chrome DevTools compatible'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareSession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.har,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.data_object_rounded),
+                title: const Text('Share JSON'),
+                subtitle: const Text('Compact call list + stats'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareSession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.json,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.notes_rounded),
+                title: const Text('Share text summary'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareSession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.text,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.article_outlined),
+                title: const Text('Share Markdown'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareSession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.markdown,
+                  );
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.copy_rounded),
+                title: const Text('Copy HAR'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.copySession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.har,
+                  );
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('HAR copied')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy_all_rounded),
+                title: const Text('Copy text summary'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.copySession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.text,
+                  );
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Summary copied')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.shield_outlined),
+                title: const Text('Share HAR (redacted)'),
+                subtitle: const Text('Masks tokens / auth on export only'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.shareSession(
+                    entries,
+                    config: widget.config,
+                    format: FerretExportFormat.har,
+                    redact: true,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

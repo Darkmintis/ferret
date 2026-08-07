@@ -14,12 +14,14 @@ import 'core/ferret_store.dart';
 import 'export/curl_exporter.dart';
 import 'export/har_exporter.dart';
 import 'export/mirror_server.dart';
+import 'export/session_exporter.dart';
 import 'export/share_exporter.dart';
 import 'interceptors/dart_io_override.dart';
 import 'interceptors/dio_interceptor.dart';
 import 'interceptors/http_wrapper.dart';
 import 'ui/ferret_bubble.dart';
 import 'ui/ferret_dashboard.dart';
+import 'ui/ferret_notification_service.dart';
 
 /// Ferret — modern, production-safe HTTP inspector for Flutter.
 ///
@@ -37,6 +39,7 @@ class Ferret {
   static FerretEngine? _engine;
   static FerretDioInterceptor? _dioInterceptor;
   static FerretMirrorServer? _mirror;
+  static FerretNotificationService? _notifications;
   static FerretActivation _activation = const FerretActivation(
     active: false,
     showReleaseWarning: false,
@@ -91,6 +94,17 @@ class Ferret {
 
     if (_activation.showReleaseWarning) {
       printFerretReleaseWarning();
+    }
+
+    if (config.showNotification && !kIsWeb) {
+      _notifications ??= FerretNotificationService();
+      unawaited(
+        _notifications!.start(
+          store: _store!,
+          config: config,
+          showReleaseTitle: _activation.showReleaseWarning,
+        ),
+      );
     }
 
     final mirrorPort = config.mirrorPort;
@@ -183,9 +197,17 @@ class Ferret {
   }
 
   /// Share the session via the platform share sheet.
-  static Future<void> shareSession({bool redact = false}) async {
+  static Future<void> shareSession({
+    bool redact = false,
+    FerretExportFormat format = FerretExportFormat.har,
+  }) async {
     final entries = _store?.entries ?? const <FerretEntry>[];
-    await const ShareExporter().shareSession(entries, redact: redact);
+    await const ShareExporter().shareSession(
+      entries,
+      config: _config,
+      format: format,
+      redact: redact,
+    );
   }
 
   /// Replays a captured request using Dio.
@@ -256,6 +278,8 @@ class Ferret {
   static void _tearDown() {
     hideOverlay();
     FerretDartIoOverride.uninstall();
+    unawaited(_notifications?.stop());
+    _notifications = null;
     unawaited(_mirror?.stop());
     _mirror = null;
     _dioInterceptor = null;

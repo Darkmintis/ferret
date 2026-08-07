@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../config/ferret_config.dart';
 import '../core/ferret_entry.dart';
+import '../core/ferret_stats.dart';
 import '../core/ferret_store.dart';
 import 'ferret_dashboard.dart';
 
-/// Floating draggable bubble that opens the Ferret dashboard.
+/// Floating bubble: shows API call count; tap opens the full inspector.
 class FerretBubble extends StatefulWidget {
   const FerretBubble({
     super.key,
@@ -29,13 +30,13 @@ class FerretBubble extends StatefulWidget {
 }
 
 class _FerretBubbleState extends State<FerretBubble> {
-  late bool _minimized;
+  late bool _compact;
   Offset _offset = const Offset(16, 120);
 
   @override
   void initState() {
     super.initState();
-    _minimized = widget.initiallyMinimized;
+    _compact = widget.initiallyMinimized;
     widget.store.addListener(_refresh);
   }
 
@@ -66,11 +67,12 @@ class _FerretBubbleState extends State<FerretBubble> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final count = widget.store.length;
-    final failed = widget.store.entries.where((e) => e.isFailed).length;
+    final stats = FerretStats.fromStore(widget.store.entries, widget.config);
+    final scheme = Theme.of(context).colorScheme;
+    final countLabel = stats.bubbleLabel;
 
     return Positioned(
-      left: _offset.dx.clamp(0, media.size.width - 72),
+      left: _offset.dx.clamp(0, media.size.width - (_compact ? 64 : 128)),
       top: _offset.dy.clamp(media.padding.top, media.size.height - 120),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -95,28 +97,17 @@ class _FerretBubbleState extends State<FerretBubble> {
             ),
           GestureDetector(
             onPanUpdate: (details) {
-              setState(() {
-                _offset += details.delta;
-              });
+              setState(() => _offset += details.delta);
             },
-            onTap: () {
-              if (_minimized) {
-                setState(() => _minimized = false);
-              } else {
-                _openDashboard();
-              }
-            },
-            onLongPress: () {
-              setState(() => _minimized = !_minimized);
-            },
+            onTap: _openDashboard,
+            onLongPress: () => setState(() => _compact = !_compact),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              width: _minimized ? 52 : 148,
               height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.symmetric(horizontal: _compact ? 10 : 14),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.inverseSurface,
+                color: scheme.inverseSurface,
                 borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
@@ -127,25 +118,40 @@ class _FerretBubbleState extends State<FerretBubble> {
                 ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.pets_rounded,
-                    color: Theme.of(context).colorScheme.onInverseSurface,
+                    color: scheme.onInverseSurface,
                     size: 22,
                   ),
-                  if (!_minimized) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
+                  const SizedBox(width: 8),
+                  Text(
+                    _compact ? countLabel : '$countLabel calls',
+                    style: TextStyle(
+                      color: scheme.onInverseSurface,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  if (stats.failed > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.error,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Text(
-                        failed > 0 ? '$count · $failed fail' : '$count calls',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        '${stats.failed}',
                         style: TextStyle(
-                          color:
-                              Theme.of(context).colorScheme.onInverseSurface,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          color: scheme.onError,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
