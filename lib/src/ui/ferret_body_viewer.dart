@@ -1,71 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-/// Read-only JSON / text body viewer. Sizes to its content.
-///
-/// JSON object keys are rendered in bold for easier scanning.
-class FerretBodyViewer extends StatelessWidget {
-  const FerretBodyViewer({
-    super.key,
-    required this.body,
-  });
-
-  final Object? body;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = formatBody(body);
-    final scheme = Theme.of(context).colorScheme;
-    final baseStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          height: 1.45,
-          color: scheme.onSurface,
-        );
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                tooltip: 'Copy body',
-                visualDensity: VisualDensity.compact,
-                onPressed: text.isEmpty
-                    ? null
-                    : () async {
-                        await Clipboard.setData(ClipboardData(text: text));
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Copied body')),
-                          );
-                        }
-                      },
-                icon: const Icon(Icons.copy_rounded, size: 18),
-              ),
-            ),
-            SelectableText.rich(
-              text.isEmpty
-                  ? TextSpan(text: '(empty)', style: baseStyle)
-                  : highlightJsonKeys(
-                      text,
-                      baseStyle ?? const TextStyle(height: 1.45),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+/// Formats bodies and header lines for Ferret detail tabs.
+abstract final class FerretBodyViewer {
   /// Formats a captured body for display / copy.
   static String formatBody(Object? body) {
     if (body == null) return '';
@@ -119,7 +57,9 @@ class FerretBodyViewer extends StatelessWidget {
   }
 }
 
-/// Header line with a bold name and normal value.
+/// Header line with a bold name and value aligned in a right-hand column.
+///
+/// Multi-line values stay indented under the value (to the right of `name:`).
 class FerretHeaderLine extends StatelessWidget {
   const FerretHeaderLine({
     super.key,
@@ -133,18 +73,19 @@ class FerretHeaderLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).textTheme.bodyMedium;
-    return SelectableText.rich(
-      TextSpan(
-        style: base,
-        children: [
-          TextSpan(
-            text: name,
-            style: base?.copyWith(fontWeight: FontWeight.w700),
+    final keyStyle = base?.copyWith(fontWeight: FontWeight.w700);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$name: ', style: keyStyle),
+        Expanded(
+          child: SelectableText(
+            value,
+            style: base,
           ),
-          const TextSpan(text: ': '),
-          TextSpan(text: value),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
