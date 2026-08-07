@@ -1,16 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../config/ferret_config.dart';
 import '../core/ferret_stats.dart';
 import '../core/ferret_store.dart';
 
-/// Ongoing notification with live call / error counts (Alice-style).
+/// Live notification with call / error counts while the host app is foregrounded.
 ///
-/// No-op on web. Requires notification permission on Android 13+.
-class FerretNotificationService {
+/// Hidden when the app is backgrounded or closed. No-op on web.
+/// Requires notification permission on Android 13+.
+class FerretNotificationService with WidgetsBindingObserver {
   FerretNotificationService();
 
   static const _channelId = 'ferret_inspector';
@@ -24,6 +26,7 @@ class FerretNotificationService {
   FerretConfig? _config;
   bool _started = false;
   bool _showReleaseTitle = false;
+  bool _foreground = true;
   Timer? _debounce;
 
   bool get isStarted => _started;
@@ -38,6 +41,7 @@ class FerretNotificationService {
     _store = store;
     _config = config;
     _showReleaseTitle = showReleaseTitle;
+    _foreground = true;
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(
@@ -67,6 +71,7 @@ class FerretNotificationService {
       );
     }
 
+    WidgetsBinding.instance.addObserver(this);
     _store!.addListener(_onStoreChanged);
     _started = true;
     await _publish();
@@ -75,26 +80,54 @@ class FerretNotificationService {
   Future<void> stop() async {
     _debounce?.cancel();
     _debounce = null;
+    if (_started) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     _store?.removeListener(_onStoreChanged);
     if (_started) {
       await _plugin.cancel(_notificationId);
     }
     _started = false;
+    _foreground = false;
     _store = null;
     _config = null;
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _foreground = true;
+        unawaited(_publish());
+      case AppLifecycleState.inactive:
+        // Transient (e.g. system dialog) — keep notification.
+        break;
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _foreground = false;
+        unawaited(_hide());
+    }
+  }
+
   void _onStoreChanged() {
+    if (!_foreground) return;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
       unawaited(_publish());
     });
   }
 
+  Future<void> _hide() async {
+    _debounce?.cancel();
+    _debounce = null;
+    await _plugin.cancel(_notificationId);
+  }
+
   Future<void> _publish() async {
     final store = _store;
     final config = _config;
-    if (!_started || store == null || config == null) return;
+    if (!_started || !_foreground || store == null || config == null) return;
 
     final stats = FerretStats.fromStore(store.entries, config);
     final title =

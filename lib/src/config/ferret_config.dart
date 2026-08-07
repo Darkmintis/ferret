@@ -17,9 +17,10 @@ class FerretConfig {
   /// permanent red "FERRET ACTIVE" tag. That warning cannot be turned off.
   final bool enableInRelease;
 
-  /// Show an ongoing notification with live call / error counts.
+  /// Show a live notification with call / error counts while the app is open.
   ///
-  /// Default `true` (Alice-style). Set `false` to disable. No-op on web.
+  /// Cleared when the app is backgrounded or closed. Default `true`.
+  /// Set `false` to disable. No-op on web.
   final bool showNotification;
 
   /// Maximum captured calls retained in memory (ring buffer).
