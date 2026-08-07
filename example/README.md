@@ -6,8 +6,15 @@ Minimal demo app for [`ferret`](https://pub.dev/packages/ferret).
 
 ```bash
 # from repo root, with Flutter 3.44.1+ (FVM recommended)
+# Android builds need JDK 17 or 21 (Gradle 8.14 does not support Java 25)
 cd example
 flutter run
+```
+
+If Gradle fails with `IllegalArgumentException: 25.0.2`, point Flutter at JDK 21:
+
+```bash
+flutter config --jdk-dir=/usr/lib/jvm/temurin-21-jdk-amd64
 ```
 
 ## What it shows
