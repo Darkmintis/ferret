@@ -28,7 +28,9 @@ class FerretConfig {
   /// Capture request/response bodies.
   final bool captureBody;
 
-  /// Floating bubble starts as a compact badge (icon + count).
+  /// Floating bubble starts minimized.
+  ///
+  /// Kept for config compatibility; the bubble is always a simple count badge.
   final bool startMinimized;
 
   /// Which client stacks to intercept.

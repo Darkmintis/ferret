@@ -83,7 +83,7 @@ Ferret.install(
     showNotification: true,     // ongoing notification with live counts
     maxEntries: 500,            // ring buffer size
     captureBody: true,
-    startMinimized: true,       // compact bubble (icon + count)
+    startMinimized: true,
     clients: {
       HttpClientType.dio,
       HttpClientType.http,
@@ -109,12 +109,13 @@ When disabled, Ferret does not intercept, store, or render anything.
 
 ### Floating bubble + notification
 
-- **Bubble** shows the **API call count** (and a red failed badge when needed). **Tap** opens the full inspector (requests, responses, errors, timeline).
+- **Bubble** is a simple circular button with the **API call count** only. It flashes **red** briefly when a new failed call arrives. **Tap** opens the full inspector (requests, responses, errors, export).
 - **Notification** (default on) shows a live status line like `24 calls · 3 failed · 1 slow`. Set `showNotification: false` to disable. On Android 13+ the host app needs `POST_NOTIFICATIONS`.
 
 ## Features
 
-- Floating bubble with live call count — tap for full inspector
+- Simple floating count button — tap for full inspector
+- Flashes red briefly on new errors
 - Ongoing notification with calls / failed / slow counts
 - Live call list — method, URL, status, duration, size
 - Raw request/response detail with JSON formatting

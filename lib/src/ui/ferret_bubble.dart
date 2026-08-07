@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../config/ferret_config.dart';
 import '../core/ferret_entry.dart';
-import '../core/ferret_stats.dart';
 import '../core/ferret_store.dart';
 import 'ferret_dashboard.dart';
 
-/// Floating bubble: shows API call count; tap opens the full inspector.
+/// Simple floating count button. Tap opens the full inspector (Alice-style).
+///
+/// Shows only the API call count. Flashes red briefly when a new failed call
+/// is captured.
 class FerretBubble extends StatefulWidget {
   const FerretBubble({
     super.key,
@@ -15,7 +19,6 @@ class FerretBubble extends StatefulWidget {
     required this.showReleaseTag,
     required this.onReplay,
     this.onClear,
-    this.initiallyMinimized = true,
   });
 
   final FerretStore store;
@@ -23,31 +26,52 @@ class FerretBubble extends StatefulWidget {
   final bool showReleaseTag;
   final Future<void> Function(FerretEntry entry) onReplay;
   final VoidCallback? onClear;
-  final bool initiallyMinimized;
 
   @override
   State<FerretBubble> createState() => _FerretBubbleState();
 }
 
 class _FerretBubbleState extends State<FerretBubble> {
-  late bool _compact;
+  static const _flashDuration = Duration(seconds: 2);
+  static const _size = 56.0;
+
   Offset _offset = const Offset(16, 120);
+  int _lastFailed = 0;
+  bool _errorFlash = false;
+  Timer? _flashTimer;
 
   @override
   void initState() {
     super.initState();
-    _compact = widget.initiallyMinimized;
-    widget.store.addListener(_refresh);
+    _lastFailed = _failedCount;
+    widget.store.addListener(_onStoreChanged);
   }
 
   @override
   void dispose() {
-    widget.store.removeListener(_refresh);
+    _flashTimer?.cancel();
+    widget.store.removeListener(_onStoreChanged);
     super.dispose();
   }
 
-  void _refresh() {
+  int get _failedCount =>
+      widget.store.entries.where((e) => e.isFailed).length;
+
+  void _onStoreChanged() {
+    final failed = _failedCount;
+    if (failed > _lastFailed) {
+      _flashError();
+    }
+    _lastFailed = failed;
     if (mounted) setState(() {});
+  }
+
+  void _flashError() {
+    _flashTimer?.cancel();
+    setState(() => _errorFlash = true);
+    _flashTimer = Timer(_flashDuration, () {
+      if (mounted) setState(() => _errorFlash = false);
+    });
   }
 
   void _openDashboard() {
@@ -67,13 +91,16 @@ class _FerretBubbleState extends State<FerretBubble> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final stats = FerretStats.fromStore(widget.store.entries, widget.config);
+    final count = widget.store.length;
     final scheme = Theme.of(context).colorScheme;
-    final countLabel = stats.bubbleLabel;
+
+    final background = _errorFlash ? scheme.error : scheme.inverseSurface;
+    final foreground =
+        _errorFlash ? scheme.onError : scheme.onInverseSurface;
 
     return Positioned(
-      left: _offset.dx.clamp(0, media.size.width - (_compact ? 64 : 128)),
-      top: _offset.dy.clamp(media.padding.top, media.size.height - 120),
+      left: _offset.dx.clamp(8.0, media.size.width - _size - 8),
+      top: _offset.dy.clamp(media.padding.top + 8, media.size.height - _size - 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -100,63 +127,31 @@ class _FerretBubbleState extends State<FerretBubble> {
               setState(() => _offset += details.delta);
             },
             onTap: _openDashboard,
-            onLongPress: () => setState(() => _compact = !_compact),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
-              height: 52,
-              padding: EdgeInsets.symmetric(horizontal: _compact ? 10 : 14),
+              width: _size,
+              height: _size,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: scheme.inverseSurface,
-                borderRadius: BorderRadius.circular(26),
+                color: background,
+                shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.28),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.pets_rounded,
-                    color: scheme.onInverseSurface,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _compact ? countLabel : '$countLabel calls',
-                    style: TextStyle(
-                      color: scheme.onInverseSurface,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  if (stats.failed > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.error,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${stats.failed}',
-                        style: TextStyle(
-                          color: scheme.onError,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  color: foreground,
+                  fontWeight: FontWeight.w800,
+                  fontSize: count >= 100 ? 14 : 16,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ),
           ),
