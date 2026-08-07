@@ -2,10 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../config/ferret_config.dart';
-import '../core/ferret_entry.dart';
 import '../core/ferret_store.dart';
-import 'ferret_dashboard.dart';
 
 /// Simple floating count button. Tap opens the full inspector (Alice-style).
 ///
@@ -15,17 +12,13 @@ class FerretBubble extends StatefulWidget {
   const FerretBubble({
     super.key,
     required this.store,
-    required this.config,
     required this.showReleaseTag,
-    required this.onReplay,
-    this.onClear,
+    required this.onOpen,
   });
 
   final FerretStore store;
-  final FerretConfig config;
   final bool showReleaseTag;
-  final Future<void> Function(FerretEntry entry) onReplay;
-  final VoidCallback? onClear;
+  final VoidCallback onOpen;
 
   @override
   State<FerretBubble> createState() => _FerretBubbleState();
@@ -33,7 +26,8 @@ class FerretBubble extends StatefulWidget {
 
 class _FerretBubbleState extends State<FerretBubble> {
   static const _flashDuration = Duration(seconds: 2);
-  static const _size = 56.0;
+  static const _size = 52.0;
+  static const _radius = 14.0;
 
   Offset _offset = const Offset(16, 120);
   int _lastFailed = 0;
@@ -74,20 +68,6 @@ class _FerretBubbleState extends State<FerretBubble> {
     });
   }
 
-  void _openDashboard() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => FerretDashboard(
-          store: widget.store,
-          config: widget.config,
-          onReplay: widget.onReplay,
-          onClear: widget.onClear,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -100,57 +80,62 @@ class _FerretBubbleState extends State<FerretBubble> {
 
     return Positioned(
       left: _offset.dx.clamp(8.0, media.size.width - _size - 8),
-      top: _offset.dy.clamp(media.padding.top + 8, media.size.height - _size - 24),
+      top: _offset.dy.clamp(
+        media.padding.top + 8,
+        media.size.height - _size - 24,
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (widget.showReleaseTag)
-            Container(
-              margin: const EdgeInsets.only(bottom: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Material(
                 color: const Color(0xFFB3261E),
                 borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'FERRET ACTIVE',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.4,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Text(
+                    'FERRET ACTIVE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
                 ),
               ),
             ),
-          GestureDetector(
-            onPanUpdate: (details) {
-              setState(() => _offset += details.delta);
-            },
-            onTap: _openDashboard,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
+          Material(
+            color: background,
+            elevation: 3,
+            shadowColor: Colors.black38,
+            borderRadius: BorderRadius.circular(_radius),
+            clipBehavior: Clip.antiAlias,
+            child: SizedBox(
               width: _size,
               height: _size,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: background,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanUpdate: (details) {
+                  setState(() => _offset += details.delta);
+                },
+                onTap: widget.onOpen,
+                child: ColoredBox(
+                  color: background,
+                  child: Center(
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        color: foreground,
+                        fontWeight: FontWeight.w800,
+                        fontSize: count >= 100 ? 14 : 16,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
                   ),
-                ],
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  color: foreground,
-                  fontWeight: FontWeight.w800,
-                  fontSize: count >= 100 ? 14 : 16,
-                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
