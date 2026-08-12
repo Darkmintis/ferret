@@ -46,25 +46,29 @@ class FerretFilter {
     List<FerretEntry> entries, {
     required Duration slowThreshold,
   }) {
-    return entries.where((entry) {
-      if (failedOnly && !entry.isFailed) return false;
-      if (slowOnly && !entry.isSlow(slowThreshold)) return false;
-      if (methods.isNotEmpty && !methods.contains(entry.method)) return false;
-      if (domain != null &&
-          domain!.isNotEmpty &&
-          !entry.host.contains(domain!)) {
-        return false;
-      }
-      final q = query.trim().toLowerCase();
-      if (q.isEmpty) return true;
-      final haystack = [
-        entry.method,
-        entry.url.toString(),
-        entry.statusCode?.toString() ?? '',
-        entry.error ?? '',
-        entry.host,
-      ].join(' ').toLowerCase();
-      return haystack.contains(q);
-    }).toList(growable: false);
+    return entries
+        .where((entry) {
+          if (failedOnly && !entry.isFailed) return false;
+          if (slowOnly && !entry.isSlow(slowThreshold)) return false;
+          if (methods.isNotEmpty && !methods.contains(entry.method)) {
+            return false;
+          }
+          if (domain != null &&
+              domain!.isNotEmpty &&
+              !entry.host.contains(domain!)) {
+            return false;
+          }
+          final q = query.trim().toLowerCase();
+          if (q.isEmpty) return true;
+          final haystack = [
+            entry.method,
+            entry.url.toString(),
+            entry.statusCode?.toString() ?? '',
+            entry.error ?? '',
+            entry.host,
+          ].join(' ').toLowerCase();
+          return haystack.contains(q);
+        })
+        .toList(growable: false);
   }
 }

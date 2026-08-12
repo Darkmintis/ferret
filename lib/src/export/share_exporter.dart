@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../core/ferret_entry.dart';
 import 'curl_exporter.dart';
@@ -17,7 +16,7 @@ class ShareExporter {
   final CurlExporter curlExporter;
 
   /// Share the full session as HAR.
-  Future<ShareResult> shareSessionHar(
+  Future<void> shareSessionHar(
     List<FerretEntry> entries, {
     bool redact = false,
   }) {
@@ -31,10 +30,7 @@ class ShareExporter {
   }
 
   /// Share one call as HAR.
-  Future<ShareResult> shareEntryHar(
-    FerretEntry entry, {
-    bool redact = false,
-  }) {
+  Future<void> shareEntryHar(FerretEntry entry, {bool redact = false}) {
     final content = harExporter.export([entry], redact: redact);
     return ferretShareTextFile(
       content: content,
@@ -45,10 +41,7 @@ class ShareExporter {
   }
 
   /// Share one call as cURL.
-  Future<ShareResult> shareCurl(
-    FerretEntry entry, {
-    bool redact = false,
-  }) {
+  Future<void> shareCurl(FerretEntry entry, {bool redact = false}) {
     final curl = curlExporter.export(entry, redact: redact);
     return ferretSharePlainText(text: curl, subject: 'Ferret cURL');
   }

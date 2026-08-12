@@ -111,7 +111,7 @@ class Ferret {
     return dio;
   }
 
-  /// Wraps a [`package:http`] client. Returns [client] unchanged when inactive.
+  /// Wraps a `package:http` client. Returns [client] unchanged when inactive.
   static http.Client wrapClient(http.Client client) {
     if (!_activation.active ||
         _engine == null ||
@@ -131,9 +131,7 @@ class Ferret {
     if (overlay == null) return;
 
     hideOverlay();
-    _overlayEntry = OverlayEntry(
-      builder: (context) => _bubble(),
-    );
+    _overlayEntry = OverlayEntry(builder: (context) => _bubble());
     overlay.insert(_overlayEntry!);
   }
 
@@ -148,7 +146,8 @@ class Ferret {
     if (!_activation.active || _store == null) return;
     if (_inspectorOpen.value) return;
 
-    final nav = navigatorKey.currentState ??
+    final nav =
+        navigatorKey.currentState ??
         (context != null
             ? Navigator.maybeOf(context, rootNavigator: true)
             : null);
@@ -231,7 +230,10 @@ class Ferret {
   }
 
   /// Share one captured call as cURL.
-  static Future<void> shareCurl(FerretEntry entry, {bool redact = false}) async {
+  static Future<void> shareCurl(
+    FerretEntry entry, {
+    bool redact = false,
+  }) async {
     await const ShareExporter().shareCurl(entry, redact: redact);
   }
 
@@ -242,10 +244,7 @@ class Ferret {
     }
     return Stack(
       fit: StackFit.expand,
-      children: [
-        child ?? const SizedBox.shrink(),
-        _bubble(),
-      ],
+      children: [child ?? const SizedBox.shrink(), _bubble()],
     );
   }
 
