@@ -3,7 +3,7 @@ description: >-
   Modern HTTP inspector for Flutter — zero setup, production-safe, raw visibility.
   See everything. Ship nothing you didn't mean to.
 version: 0.1.0
-homepage: https://darkmintis.dev/ferret
+homepage: https://github.com/darkmintis/ferret
 repository: https://github.com/darkmintis/ferret
 issue_tracker: https://github.com/darkmintis/ferret/issues
 topics:
