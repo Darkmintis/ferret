@@ -74,6 +74,15 @@ final client = Ferret.wrapClient(http.Client());
 // dart:io HttpClient — captured automatically after install (mobile/desktop)
 ```
 
+### Platform support
+
+| Platform | Dio | package:http | dart:io |
+|---|---|---|---|
+| Android / iOS / macOS / Windows / Linux | ✓ | ✓ | ✓ |
+| Web | ✓ | ✓ | — (not available) |
+
+On web, use `Ferret.createDio()` or `Ferret.wrapClient()` — the inspector UI and HAR/cURL export work the same.
+
 ## Configuration
 
 ```dart
@@ -118,6 +127,10 @@ When disabled, Ferret does not intercept, store, or render anything.
 - Search & filters (method, failed, slow)
 - Copy as cURL (per call)
 - Share / copy session as HAR
+
+## Repository
+
+https://github.com/darkmintis/ferret
 
 ## Example
 
