@@ -1,5 +1,5 @@
 ## 0.1.0
 
 * Initial release: Dio / http / dart:io capture, Material 3 inspector,
-  timeline, diff, cURL / HAR / share, session replay, LAN mirror,
+  call list with search/filters, detail tabs, cURL / HAR export,
   production-safe install gating.
