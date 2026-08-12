@@ -1,7 +1,7 @@
 import '../config/ferret_config.dart';
 import 'ferret_entry.dart';
 
-/// Aggregate stats for bubble badge, notifications, and summaries.
+/// Aggregate stats for bubble badge and summaries.
 class FerretStats {
   const FerretStats({
     required this.total,
@@ -55,7 +55,7 @@ class FerretStats {
   /// Compact label for the floating bubble: call count only.
   String get bubbleLabel => '$total';
 
-  /// Richer status line for notifications / export headers.
+  /// Richer status line for the dashboard header / export headers.
   String get statusLine {
     final parts = <String>['$total calls'];
     if (failed > 0) parts.add('$failed failed');
