@@ -26,6 +26,12 @@ abstract final class FerretTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.4,
+          color: scheme.primary,
+        ),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: scheme.primary,
@@ -49,6 +55,28 @@ abstract final class FerretTheme {
     return Theme(
       data: theme,
       child: Builder(builder: builder),
+    );
+  }
+
+  /// Branded app bar title with optional subtitle.
+  static Widget brandTitle(BuildContext context, {String? subtitle}) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Ferret'),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
