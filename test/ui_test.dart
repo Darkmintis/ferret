@@ -130,7 +130,9 @@ void main() {
   });
 
   group('FerretDetailView', () {
-    testWidgets('shows overview chips and empty request state', (tester) async {
+    testWidgets('shows request metadata and empty body for GET', (
+      tester,
+    ) async {
       final entry = completedEntry('1', method: 'GET', status: 201);
       await tester.pumpWidget(
         MaterialApp(
@@ -143,7 +145,33 @@ void main() {
       expect(find.textContaining('https://example.com/1'), findsOneWidget);
       await tester.tap(find.text('Request'));
       await tester.pumpAndSettle();
-      expect(find.text('No request data'), findsOneWidget);
+      expect(find.text('Bytes sent'), findsOneWidget);
+      expect(find.text('Body is empty'), findsOneWidget);
+      expect(find.text('No headers captured'), findsOneWidget);
+    });
+
+    testWidgets('shows request headers when present', (tester) async {
+      final entry = completedEntry(
+        '1',
+        method: 'GET',
+        requestHeaders: const {
+          'accept': 'application/json',
+          'authorization': 'Bearer demo-token',
+        },
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FerretDetailView(
+            entry: entry,
+            slowThreshold: const Duration(seconds: 2),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Request'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('accept:'), findsOneWidget);
+      expect(find.textContaining('authorization:'), findsOneWidget);
+      expect(find.text('Body is empty'), findsOneWidget);
     });
 
     testWidgets('shows response headers and body', (tester) async {
@@ -162,12 +190,12 @@ void main() {
       );
       await tester.tap(find.text('Response'));
       await tester.pumpAndSettle();
-      expect(find.text('Headers:'), findsOneWidget);
-      expect(find.text('Body:'), findsOneWidget);
+      expect(find.text('Headers'), findsOneWidget);
+      expect(find.text('Body'), findsOneWidget);
       expect(find.textContaining('content-type:'), findsOneWidget);
     });
 
-    testWidgets('copy cURL action is available', (tester) async {
+    testWidgets('copy cURL and share HAR actions are available', (tester) async {
       final entry = completedEntry('1', method: 'POST');
       await tester.pumpWidget(
         MaterialApp(
@@ -178,6 +206,7 @@ void main() {
         ),
       );
       expect(find.byTooltip('Copy as cURL'), findsOneWidget);
+      expect(find.byTooltip('Share HAR'), findsOneWidget);
       expect(const CurlExporter().export(entry), contains('curl -X POST'));
     });
 
