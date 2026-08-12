@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../core/ferret_entry.dart';
+import 'ferret_redaction.dart';
 
 /// Exports captured calls as HAR 1.2 JSON.
 class HarExporter {
@@ -33,23 +34,27 @@ class HarExporter {
 
   Map<String, Object?> _toHarEntry(FerretEntry entry, {required bool redact}) {
     final headers = redact
-        ? _redactHeaders(entry.requestHeaders)
+        ? FerretRedaction.headers(entry.requestHeaders)
         : entry.requestHeaders;
     final responseHeaders = redact
-        ? _redactHeaders(entry.responseHeaders ?? const {})
+        ? FerretRedaction.headers(entry.responseHeaders ?? const {})
         : (entry.responseHeaders ?? const {});
 
     final started = entry.startTime.toUtc().toIso8601String();
     final time = entry.duration?.inMilliseconds ?? 0;
     final body = entry.requestBody;
     final responseBody = entry.responseBody;
+    final url = redact ? FerretRedaction.url(entry.url) : entry.url;
+    final query = redact
+        ? FerretRedaction.queryParameters(entry.url.queryParameters)
+        : entry.url.queryParameters;
 
     return {
       'startedDateTime': started,
       'time': time,
       'request': {
         'method': entry.method,
-        'url': entry.url.toString(),
+        'url': url.toString(),
         'httpVersion': 'HTTP/1.1',
         'cookies': <Object?>[],
         'headers': [
@@ -57,7 +62,7 @@ class HarExporter {
             {'name': e.key, 'value': e.value},
         ],
         'queryString': [
-          for (final e in entry.url.queryParameters.entries)
+          for (final e in query.entries)
             {'name': e.key, 'value': e.value},
         ],
         'headersSize': -1,
@@ -67,7 +72,9 @@ class HarExporter {
             'mimeType': headers['content-type'] ??
                 headers['Content-Type'] ??
                 'application/json',
-            'text': _stringifyBody(redact ? _redactBody(body) : body),
+            'text': FerretRedaction.stringifyBody(
+              redact ? FerretRedaction.body(body) : body,
+            ),
           },
       },
       'response': {
@@ -84,7 +91,13 @@ class HarExporter {
           'mimeType': responseHeaders['content-type'] ??
               responseHeaders['Content-Type'] ??
               'application/octet-stream',
-          'text': responseBody == null ? '' : _stringifyBody(responseBody),
+          'text': responseBody == null
+              ? ''
+              : FerretRedaction.stringifyBody(
+                  redact
+                      ? FerretRedaction.body(responseBody)
+                      : responseBody,
+                ),
         },
         'redirectURL': '',
         'headersSize': -1,
@@ -99,61 +112,9 @@ class HarExporter {
     };
   }
 
-  static Map<String, String> _redactHeaders(Map<String, String> headers) {
-    final out = <String, String>{};
-    headers.forEach((key, value) {
-      final lower = key.toLowerCase();
-      final sensitive = lower == 'authorization' ||
-          lower == 'cookie' ||
-          lower == 'set-cookie' ||
-          lower.contains('token') ||
-          lower.contains('api-key');
-      out[key] = sensitive ? '***' : value;
-    });
-    return out;
-  }
-
   static int _bodySize(Object? body) {
     if (body == null) return 0;
     if (body is List<int>) return body.length;
-    return utf8.encode(_stringifyBody(body)).length;
-  }
-
-  static String _stringifyBody(Object body) {
-    if (body is String) return body;
-    if (body is List<int>) {
-      try {
-        return utf8.decode(body);
-      } on Object {
-        return base64Encode(body);
-      }
-    }
-    try {
-      return jsonEncode(body);
-    } on Object {
-      return body.toString();
-    }
-  }
-
-  static Object _redactBody(Object body) {
-    if (body is Map) {
-      return body.map((key, value) {
-        final k = '$key'.toLowerCase();
-        if (k.contains('password') ||
-            k.contains('token') ||
-            k.contains('secret') ||
-            k.contains('email')) {
-          return MapEntry(key, '***');
-        }
-        return MapEntry(key, value);
-      });
-    }
-    if (body is String) {
-      return body.replaceAll(
-        RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'),
-        '***@***',
-      );
-    }
-    return body;
+    return utf8.encode(FerretRedaction.stringifyBody(body)).length;
   }
 }
