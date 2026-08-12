@@ -59,23 +59,35 @@ abstract final class FerretBodyViewer {
 
 /// Header line with a bold name and wrapping value (safe on narrow widths).
 class FerretHeaderLine extends StatelessWidget {
-  const FerretHeaderLine({super.key, required this.name, required this.value});
+  const FerretHeaderLine({
+    super.key,
+    required this.name,
+    required this.value,
+    this.emphasize = false,
+  });
 
   final String name;
   final String value;
+  final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final base = Theme.of(context).textTheme.bodyMedium;
-    final keyStyle = base?.copyWith(fontWeight: FontWeight.w700);
+    final keyStyle = base?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: emphasize ? scheme.primary : null,
+    );
 
-    // Single flowing text — avoids Row overflow on half-width compare panes.
     return SelectableText.rich(
       TextSpan(
         style: base,
         children: [
           TextSpan(text: '$name: ', style: keyStyle),
-          TextSpan(text: value),
+          TextSpan(
+            text: value,
+            style: emphasize ? base?.copyWith(fontWeight: FontWeight.w600) : null,
+          ),
         ],
       ),
     );

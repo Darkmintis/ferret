@@ -22,10 +22,7 @@ class FerretDioInterceptor extends Interceptor {
       return;
     }
 
-    final headers = <String, String>{};
-    options.headers.forEach((key, value) {
-      if (value != null) headers[key] = value.toString();
-    });
+    final headers = _collectRequestHeaders(options);
 
     final entry = _engine.begin(
       client: HttpClientType.dio,
@@ -51,6 +48,11 @@ class FerretDioInterceptor extends Interceptor {
     _popScope(response.requestOptions);
     final id = response.requestOptions.extra[_entryIdExtra] as String?;
     if (id != null) {
+      final reqHeaders = _collectRequestHeaders(response.requestOptions);
+      _engine.store.update(
+        id,
+        (current) => current.copyWith(requestHeaders: reqHeaders),
+      );
       final headers = <String, String>{};
       response.headers.map.forEach((key, values) {
         headers[key] = values.join(', ');
@@ -70,6 +72,11 @@ class FerretDioInterceptor extends Interceptor {
     _popScope(err.requestOptions);
     final id = err.requestOptions.extra[_entryIdExtra] as String?;
     if (id != null) {
+      final reqHeaders = _collectRequestHeaders(err.requestOptions);
+      _engine.store.update(
+        id,
+        (current) => current.copyWith(requestHeaders: reqHeaders),
+      );
       final response = err.response;
       if (response != null) {
         final headers = <String, String>{};
@@ -88,6 +95,18 @@ class FerretDioInterceptor extends Interceptor {
       }
     }
     handler.next(err);
+  }
+
+  static Map<String, String> _collectRequestHeaders(RequestOptions options) {
+    final headers = <String, String>{};
+    options.headers.forEach((key, value) {
+      if (value != null) headers[key] = value.toString();
+    });
+    final contentType = options.contentType?.toString();
+    if (contentType != null && contentType.isNotEmpty) {
+      headers.putIfAbsent('content-type', () => contentType);
+    }
+    return headers;
   }
 
   static void _popScope(RequestOptions options) {

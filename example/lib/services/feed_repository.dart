@@ -26,7 +26,16 @@ class FeedRepository {
 
   /// Use case: successful Dio GET with a response body.
   Future<List<Post>> loadPosts({int limit = 5}) async {
-    final response = await _dio.get<List<dynamic>>('/posts');
+    final response = await _dio.get<List<dynamic>>(
+      '/posts',
+      options: Options(
+        headers: const {
+          'Accept': 'application/json',
+          'Accept-Language': 'en',
+          'Authorization': 'Bearer demo-token',
+        },
+      ),
+    );
     final list = response.data ?? const <dynamic>[];
     return list
         .take(limit)
