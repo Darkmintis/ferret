@@ -136,6 +136,8 @@ class _FerretDashboardState extends State<FerretDashboard> {
             Expanded(
               child: _CallsList(
                 entries: entries,
+                storeEmpty: widget.store.isEmpty,
+                filteredEmpty: !widget.store.isEmpty && entries.isEmpty,
                 slowThreshold: widget.config.slowThreshold,
                 onOpen: _openDetail,
               ),
@@ -223,6 +225,17 @@ class _FerretDashboardState extends State<FerretDashboard> {
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   await exporter.shareSessionHar(entries, redact: true);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy_all_outlined),
+                title: const Text('Copy HAR (redacted)'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await exporter.copySessionHar(entries, redact: true);
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Redacted HAR copied')),
+                  );
                 },
               ),
             ],
@@ -318,22 +331,31 @@ class _SearchPanel extends StatelessWidget {
 class _CallsList extends StatelessWidget {
   const _CallsList({
     required this.entries,
+    required this.storeEmpty,
+    required this.filteredEmpty,
     required this.slowThreshold,
     required this.onOpen,
   });
 
   final List<FerretEntry> entries;
+  final bool storeEmpty;
+  final bool filteredEmpty;
   final Duration slowThreshold;
   final ValueChanged<FerretEntry> onOpen;
 
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return const Center(
+      final message = storeEmpty
+          ? 'No HTTP calls yet.\nFire a request to see it here.'
+          : filteredEmpty
+              ? 'No calls match your filters.\nTry adjusting search or chips.'
+              : 'No HTTP calls yet.\nFire a request to see it here.';
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Text(
-            'No HTTP calls yet.\nFire a request to see it here.',
+            message,
             textAlign: TextAlign.center,
           ),
         ),
