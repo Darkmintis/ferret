@@ -7,7 +7,7 @@ Modern HTTP inspector for Flutter — zero setup, production-safe, raw visibilit
 [![pub package](https://img.shields.io/pub/v/ferret.svg)](https://pub.dev/packages/ferret)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Ferret captures Dio, `package:http`, and `dart:io` traffic into a Material 3 inspector: floating bubble, request list, raw detail, timeline, diff, cURL/HAR export, session share, replay, and an optional LAN mirror.
+Ferret captures Dio, `package:http`, and `dart:io` traffic into a Material 3 inspector: floating bubble, call list, raw detail, and cURL / HAR export.
 
 ## Why Ferret
 
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: Ferret.navigatorKey,
-      builder: Ferret.builder, // floating bubble
+      builder: Ferret.builder, // floating bubble (center-right by default)
       home: const HomePage(),
     );
   }
@@ -81,17 +81,14 @@ Ferret.install(
   config: const FerretConfig(
     enabled: true,              // master switch (debug/profile)
     enableInRelease: false,     // set true only when you intentionally need release
-    showNotification: true,     // live counts while app is open (hidden in background)
     maxEntries: 500,            // ring buffer size
     captureBody: true,
-    startMinimized: true,
     clients: {
       HttpClientType.dio,
       HttpClientType.http,
       HttpClientType.dartIo,
     },
     slowThreshold: Duration(seconds: 2),
-    // mirrorPort: 7474,        // optional LAN mirror
   ),
 );
 ```
@@ -104,61 +101,49 @@ Ferret.install(
 | Release | **Fully off** unless `enableInRelease: true` |
 | Release + `enableInRelease: true` | On, with a loud console warning **and** a permanent red **FERRET ACTIVE** tag |
 
-The release warning is **not configurable**. If Ferret is running in a release build, the banner and red tag always appear so it is impossible to ship capture silently.
-
 When disabled, Ferret does not intercept, store, or render anything.
 
-### Floating bubble + notification
+### Floating bubble
 
-- **Bubble** is a simple circular button with the **API call count** only. It flashes **red** briefly when a new failed call arrives. **Tap** opens the full inspector (requests, responses, errors, export).
-- **Notification** (default on) shows a live status line like `24 calls · 3 failed · 1 slow` **only while the app is in the foreground**. It is cleared when the app is backgrounded or closed. Set `showNotification: false` to disable. On Android 13+ the host app needs `POST_NOTIFICATIONS`.
+- Circular count button, default position **center-right** (drag to move).
+- Flashes **red** briefly when a new failed call arrives.
+- **Tap** opens the full inspector.
+- Hidden while the inspector is open.
 
 ## Features
 
-- Simple floating count button — tap for full inspector
-- Flashes red briefly on new errors
-- Ongoing notification with calls / failed / slow counts
-- Live call list — method, URL, status, duration, size
-- Raw request/response detail with JSON formatting
-- Search & filters — method, failed-only, slow-only
-- Timeline / waterfall view
-- Side-by-side response diff
-- Export & share: **SVG** (current detail tab / session cards), **HAR**, **JSON**, **text**, **Markdown** (+ redacted) — session or single call
+- Floating count button → full inspector
+- Call list with method, path, host, status, duration, size
+- Detail tabs: Overview · Request · Response · Error
+- Search & filters (method, failed, slow)
 - Copy as cURL (per call)
-- Replay a captured request
-- Optional LAN mirror (`mirrorPort`) for desktop viewing
+- Share / copy session as HAR
 
 ## Example
 
 ```bash
 git clone https://github.com/darkmintis/ferret.git
 cd ferret
-fvm use 3.44.1   # or use your Flutter 3.44.1+ SDK
+fvm use 3.44.1
 cd example
 flutter run
 ```
-
-The example has four use-case buttons (Dio GET, Dio POST, package:http, and a red 404) so you can exercise Ferret’s Overview / Request / Response / Error tabs.
 
 ## API surface
 
 ```dart
 Ferret.install(config: ...);
-Ferret.navigatorKey           // attach to MaterialApp
-Ferret.builder                // MaterialApp / CupertinoApp builder
+Ferret.navigatorKey
+Ferret.builder
 Ferret.createDio([options])
 Ferret.dioInterceptor
 Ferret.wrapClient(client)
-Ferret.showOverlay(context)    // optional manual overlay
-Ferret.openDashboard()         // opens inspector
+Ferret.openDashboard()
 Ferret.clear()
 Ferret.toCurl(entry)
-Ferret.toSvg([entry]) // session summary SVG cards
-Ferret.toSvgPane(entry, pane: FerretSvgPane.response) // full detail-tab SVG
 Ferret.toHar(redact: false)
 Ferret.shareSession(redact: false)
-Ferret.shareEntry(entry, format: FerretExportFormat.svg, pane: FerretSvgPane.response)
-Ferret.replay(entry)
+Ferret.shareCurl(entry)
 Ferret.isActive
 ```
 
