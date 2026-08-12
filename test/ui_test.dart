@@ -94,6 +94,29 @@ void main() {
       expect(find.text('Nothing to export'), findsOneWidget);
     });
 
+    testWidgets('filtered empty state when no calls match', (tester) async {
+      final store = FerretStore(maxEntries: 20)
+        ..add(completedEntry('1', method: 'GET', status: 200))
+        ..add(completedEntry('2', method: 'POST', status: 500));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FerretDashboard(
+            store: store,
+            config: const FerretConfig(),
+          ),
+        ),
+      );
+      await tester.tap(find.byTooltip('Search & filter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DELETE'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('No calls match your filters.\nTry adjusting search or chips.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('opens detail on list tap', (tester) async {
       final store = FerretStore(maxEntries: 20)
         ..add(completedEntry('1', method: 'GET'));
