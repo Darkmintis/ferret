@@ -6,59 +6,50 @@ import '../core/ferret_entry.dart';
 import '../core/ferret_stats.dart';
 import '../core/ferret_store.dart';
 import '../export/curl_exporter.dart';
-import '../export/session_exporter.dart';
 import '../export/share_exporter.dart';
 import 'ferret_detail_view.dart';
-import 'ferret_diff_view.dart';
 import 'ferret_filter.dart';
 import 'ferret_theme.dart';
-import 'ferret_timeline.dart';
 
-/// Full inspector: list, filters, timeline, export.
+/// Full inspector: call list, search, filters, cURL / HAR export.
 class FerretDashboard extends StatefulWidget {
   const FerretDashboard({
     super.key,
     required this.store,
     required this.config,
-    required this.onReplay,
     this.onClear,
   });
 
   final FerretStore store;
   final FerretConfig config;
-  final Future<void> Function(FerretEntry entry) onReplay;
   final VoidCallback? onClear;
 
   @override
   State<FerretDashboard> createState() => _FerretDashboardState();
 }
 
-class _FerretDashboardState extends State<FerretDashboard>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
+class _FerretDashboardState extends State<FerretDashboard> {
   FerretFilter _filter = FerretFilter.empty;
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
-  String? _compareId;
   bool _searchOpen = false;
 
   bool get _hasActiveFilters =>
       _filter.query.trim().isNotEmpty ||
       _filter.failedOnly ||
       _filter.slowOnly ||
-      _filter.methods.isNotEmpty;
+      _filter.methods.isNotEmpty ||
+      (_filter.domain != null && _filter.domain!.trim().isNotEmpty);
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
     widget.store.addListener(_onStore);
   }
 
   @override
   void dispose() {
     widget.store.removeListener(_onStore);
-    _tabs.dispose();
     _search.dispose();
     _searchFocus.dispose();
     super.dispose();
@@ -116,7 +107,7 @@ class _FerretDashboardState extends State<FerretDashboard>
               ),
             ),
             IconButton(
-              tooltip: 'Export / share',
+              tooltip: 'Share HAR',
               onPressed: () => _openExportSheet(context),
               icon: const Icon(Icons.ios_share_rounded),
             ),
@@ -127,65 +118,26 @@ class _FerretDashboardState extends State<FerretDashboard>
                 icon: const Icon(Icons.delete_outline_rounded),
               ),
           ],
-          bottom: TabBar(
-            controller: _tabs,
-            tabs: const [
-              Tab(text: 'Calls'),
-              Tab(text: 'Timeline'),
-            ],
-          ),
         ),
         body: Column(
           children: [
-            if (_searchOpen) _SearchPanel(
-              searchController: _search,
-              searchFocus: _searchFocus,
-              filter: _filter,
-              onQueryChanged: (value) {
-                setState(() {
-                  _filter = _filter.copyWith(query: value);
-                });
-              },
-              onFilterChanged: (filter) => setState(() => _filter = filter),
-            ),
+            if (_searchOpen)
+              _SearchPanel(
+                searchController: _search,
+                searchFocus: _searchFocus,
+                filter: _filter,
+                onQueryChanged: (value) {
+                  setState(() {
+                    _filter = _filter.copyWith(query: value);
+                  });
+                },
+                onFilterChanged: (filter) => setState(() => _filter = filter),
+              ),
             Expanded(
-              child: TabBarView(
-                controller: _tabs,
-                children: [
-                  _CallsList(
-                    entries: entries,
-                    slowThreshold: widget.config.slowThreshold,
-                    compareId: _compareId,
-                    onOpen: _openDetail,
-                    onToggleCompare: (entry) {
-                      setState(() {
-                        if (_compareId == entry.id) {
-                          _compareId = null;
-                        } else if (_compareId == null) {
-                          _compareId = entry.id;
-                        } else {
-                          final left = widget.store.getById(_compareId!);
-                          _compareId = null;
-                          if (left != null) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => FerretDiffView(
-                                  left: left,
-                                  right: entry,
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      });
-                    },
-                  ),
-                  FerretTimeline(
-                    entries: entries,
-                    slowThreshold: widget.config.slowThreshold,
-                    onTap: _openDetail,
-                  ),
-                ],
+              child: _CallsList(
+                entries: entries,
+                slowThreshold: widget.config.slowThreshold,
+                onOpen: _openDetail,
               ),
             ),
           ],
@@ -195,24 +147,20 @@ class _FerretDashboardState extends State<FerretDashboard>
   }
 
   void _openDetail(FerretEntry entry) {
+    final entryId = entry.id;
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: true,
         transitionDuration: const Duration(milliseconds: 120),
         reverseTransitionDuration: const Duration(milliseconds: 100),
         pageBuilder: (context, animation, secondaryAnimation) {
-          return FerretDetailView(
-            entry: entry,
-            slowThreshold: widget.config.slowThreshold,
-            config: widget.config,
-            onReplay: () => widget.onReplay(entry),
-            onCompare: () {
-              setState(() => _compareId = entry.id);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Select another call to compare'),
-                ),
+          return ListenableBuilder(
+            listenable: widget.store,
+            builder: (context, _) {
+              final live = widget.store.getById(entryId) ?? entry;
+              return FerretDetailView(
+                entry: live,
+                slowThreshold: widget.config.slowThreshold,
               );
             },
           );
@@ -245,26 +193,8 @@ class _FerretDashboardState extends State<FerretDashboard>
             shrinkWrap: true,
             children: [
               const ListTile(
-                title: Text('Export / share'),
-                subtitle: Text('SVG · HAR · JSON · Text · Markdown'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.download_rounded),
-                title: const Text('Save SVG'),
-                subtitle: const Text('Writes session cards as .svg on device'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  try {
-                    final path = await exporter.saveSessionSvg(entries);
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('SVG saved\n$path')),
-                    );
-                  } on Object catch (e) {
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('Could not save SVG: $e')),
-                    );
-                  }
-                },
+                title: Text('Export session'),
+                subtitle: Text('HAR · cURL per call from the list'),
               ),
               ListTile(
                 leading: const Icon(Icons.archive_outlined),
@@ -272,78 +202,17 @@ class _FerretDashboardState extends State<FerretDashboard>
                 subtitle: const Text('Chrome DevTools compatible'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  await exporter.shareSession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.har,
-                  );
+                  await exporter.shareSessionHar(entries);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.data_object_rounded),
-                title: const Text('Share JSON'),
-                subtitle: const Text('Compact call list + stats'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await exporter.shareSession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.json,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.notes_rounded),
-                title: const Text('Share text summary'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await exporter.shareSession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.text,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.article_outlined),
-                title: const Text('Share Markdown'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await exporter.shareSession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.markdown,
-                  );
-                },
-              ),
-              const Divider(),
               ListTile(
                 leading: const Icon(Icons.copy_rounded),
                 title: const Text('Copy HAR'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  await exporter.copySession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.har,
-                  );
+                  await exporter.copySessionHar(entries);
                   messenger.showSnackBar(
                     const SnackBar(content: Text('HAR copied')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.copy_all_rounded),
-                title: const Text('Copy text summary'),
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await exporter.copySession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.text,
-                  );
-                  messenger.showSnackBar(
-                    const SnackBar(content: Text('Summary copied')),
                   );
                 },
               ),
@@ -353,12 +222,7 @@ class _FerretDashboardState extends State<FerretDashboard>
                 subtitle: const Text('Masks tokens / auth on export only'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  await exporter.shareSession(
-                    entries,
-                    config: widget.config,
-                    format: FerretExportFormat.har,
-                    redact: true,
-                  );
+                  await exporter.shareSessionHar(entries, redact: true);
                 },
               ),
             ],
@@ -395,7 +259,7 @@ class _SearchPanel extends StatelessWidget {
             controller: searchController,
             focusNode: searchFocus,
             decoration: InputDecoration(
-              hintText: 'Search method, URL, status…',
+              hintText: 'Search method, host, URL, status…',
               prefixIcon: const Icon(Icons.search_rounded),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -455,16 +319,12 @@ class _CallsList extends StatelessWidget {
   const _CallsList({
     required this.entries,
     required this.slowThreshold,
-    required this.compareId,
     required this.onOpen,
-    required this.onToggleCompare,
   });
 
   final List<FerretEntry> entries;
   final Duration slowThreshold;
-  final String? compareId;
   final ValueChanged<FerretEntry> onOpen;
-  final ValueChanged<FerretEntry> onToggleCompare;
 
   @override
   Widget build(BuildContext context) {
@@ -491,70 +351,155 @@ class _CallsList extends StatelessWidget {
         final entry = entries[index];
         final failed = entry.isFailed;
         final slow = entry.isSlow(slowThreshold);
-        final selected = compareId == entry.id;
+        final path = entry.url.path.isEmpty ? '/' : entry.url.path;
+        final query = entry.url.hasQuery ? '?${entry.url.query}' : '';
+        final methodColor = failed
+            ? scheme.error
+            : slow
+                ? scheme.tertiary
+                : scheme.primary;
 
-        return ListTile(
-          selected: selected,
-          leading: CircleAvatar(
-            backgroundColor: failed
-                ? scheme.errorContainer
-                : slow
-                    ? scheme.tertiaryContainer
-                    : scheme.primaryContainer,
-            child: Text(
-              entry.method.substring(0, entry.method.length.clamp(0, 4)),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: failed
-                    ? scheme.onErrorContainer
-                    : slow
-                        ? scheme.onTertiaryContainer
-                        : scheme.onPrimaryContainer,
-              ),
+        return InkWell(
+          onTap: () => onOpen(entry),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    entry.method,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      color: methodColor,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$path$query',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        entry.host,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (entry.statusCode != null)
+                            _MetaChip(
+                              label: '${entry.statusCode}',
+                              emphasis: failed,
+                              color: failed ? scheme.error : scheme.onSurface,
+                            ),
+                          if (entry.isPending)
+                            _MetaChip(
+                              label: 'pending',
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          if (entry.sizeBytes != null)
+                            _MetaChip(
+                              label: _formatBytes(entry.sizeBytes!),
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          if (entry.duration != null)
+                            _MetaChip(
+                              label: '${entry.duration!.inMilliseconds} ms',
+                              emphasis: slow,
+                              color: slow
+                                  ? scheme.tertiary
+                                  : scheme.onSurfaceVariant,
+                            ),
+                          if (failed && entry.error != null)
+                            _MetaChip(
+                              label: 'failed',
+                              emphasis: true,
+                              color: scheme.error,
+                            ),
+                          if (slow)
+                            _MetaChip(
+                              label: 'slow',
+                              emphasis: true,
+                              color: scheme.tertiary,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Copy as cURL',
+                  icon: const Icon(Icons.copy_rounded, size: 20),
+                  onPressed: () async {
+                    await Clipboard.setData(
+                      ClipboardData(
+                        text: const CurlExporter().export(entry),
+                      ),
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('cURL copied')),
+                      );
+                    }
+                  },
+                ),
+              ],
             ),
           ),
-          title: Text(
-            entry.url.path.isEmpty ? '/' : entry.url.path,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          subtitle: Text(
-            [
-              entry.host,
-              if (entry.statusCode != null) '${entry.statusCode}',
-              if (entry.duration != null) '${entry.duration!.inMilliseconds}ms',
-              if (failed) 'failed',
-              if (slow) 'slow',
-            ].join(' · '),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: IconButton(
-            tooltip: 'Copy as cURL',
-            icon: const Icon(Icons.copy_rounded, size: 20),
-            onPressed: () async {
-              await Clipboard.setData(
-                ClipboardData(text: const CurlExporter().export(entry)),
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('cURL copied')),
-                );
-              }
-            },
-          ),
-          onTap: () {
-            if (compareId != null) {
-              onToggleCompare(entry);
-            } else {
-              onOpen(entry);
-            }
-          },
-          onLongPress: () => onToggleCompare(entry),
         );
       },
+    );
+  }
+
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024) return '${bytes}B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)}KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.label,
+    required this.color,
+    this.emphasis = false,
+  });
+
+  final String label;
+  final Color color;
+  final bool emphasis;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: emphasis ? FontWeight.w700 : FontWeight.w500,
+        color: color,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     );
   }
 }
