@@ -20,10 +20,7 @@ void main() {
 
     test('decodes utf8 bytes and leaves plain text', () {
       expect(FerretBodyViewer.formatBody('hello'), 'hello');
-      expect(
-        FerretBodyViewer.formatBody(utf8Bytes('café')),
-        'café',
-      );
+      expect(FerretBodyViewer.formatBody(utf8Bytes('café')), 'café');
     });
 
     test('highlightJsonKeys bolds keys', () {
@@ -34,8 +31,8 @@ void main() {
       expect(span.children, isNotNull);
       expect(span.children!.length, greaterThan(1));
       final bold = span.children!.whereType<TextSpan>().where(
-            (s) => s.style?.fontWeight == FontWeight.w700,
-          );
+        (s) => s.style?.fontWeight == FontWeight.w700,
+      );
       expect(bold, isNotEmpty);
       expect(bold.first.toPlainText(), contains('"userId"'));
     });
@@ -46,7 +43,10 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: FerretHeaderLine(name: 'content-type', value: 'application/json'),
+            body: FerretHeaderLine(
+              name: 'content-type',
+              value: 'application/json',
+            ),
           ),
         ),
       );
@@ -62,10 +62,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: FerretDashboard(
-            store: store,
-            config: const FerretConfig(),
-          ),
+          home: FerretDashboard(store: store, config: const FerretConfig()),
         ),
       );
       expect(find.text('Ferret'), findsOneWidget);
@@ -79,14 +76,13 @@ void main() {
       );
     });
 
-    testWidgets('export with empty store shows nothing to export', (tester) async {
+    testWidgets('export with empty store shows nothing to export', (
+      tester,
+    ) async {
       final store = FerretStore(maxEntries: 5);
       await tester.pumpWidget(
         MaterialApp(
-          home: FerretDashboard(
-            store: store,
-            config: const FerretConfig(),
-          ),
+          home: FerretDashboard(store: store, config: const FerretConfig()),
         ),
       );
       await tester.tap(find.byTooltip('Share HAR'));
@@ -101,10 +97,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: FerretDashboard(
-            store: store,
-            config: const FerretConfig(),
-          ),
+          home: FerretDashboard(store: store, config: const FerretConfig()),
         ),
       );
       await tester.tap(find.byTooltip('Search & filter'));
@@ -112,7 +105,9 @@ void main() {
       await tester.tap(find.text('DELETE'));
       await tester.pumpAndSettle();
       expect(
-        find.text('No calls match your filters.\nTry adjusting search or chips.'),
+        find.text(
+          'No calls match your filters.\nTry adjusting search or chips.',
+        ),
         findsOneWidget,
       );
     });
@@ -122,10 +117,7 @@ void main() {
         ..add(completedEntry('1', method: 'GET'));
       await tester.pumpWidget(
         MaterialApp(
-          home: FerretDashboard(
-            store: store,
-            config: const FerretConfig(),
-          ),
+          home: FerretDashboard(store: store, config: const FerretConfig()),
         ),
       );
       await tester.tap(find.text('/1'));
@@ -186,10 +178,7 @@ void main() {
         ),
       );
       expect(find.byTooltip('Copy as cURL'), findsOneWidget);
-      expect(
-        const CurlExporter().export(entry),
-        contains('curl -X POST'),
-      );
+      expect(const CurlExporter().export(entry), contains('curl -X POST'));
     });
 
     testWidgets('empty error tab message', (tester) async {

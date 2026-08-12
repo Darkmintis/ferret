@@ -59,11 +59,7 @@ abstract final class FerretBodyViewer {
 
 /// Header line with a bold name and wrapping value (safe on narrow widths).
 class FerretHeaderLine extends StatelessWidget {
-  const FerretHeaderLine({
-    super.key,
-    required this.name,
-    required this.value,
-  });
+  const FerretHeaderLine({super.key, required this.name, required this.value});
 
   final String name;
   final String value;

@@ -71,17 +71,14 @@ class _FerretDashboardState extends State<FerretDashboard> {
   }
 
   List<FerretEntry> get _visible => _filter.apply(
-        widget.store.entries,
-        slowThreshold: widget.config.slowThreshold,
-      );
+    widget.store.entries,
+    slowThreshold: widget.config.slowThreshold,
+  );
 
   @override
   Widget build(BuildContext context) {
     final entries = _visible;
-    final stats = FerretStats.fromStore(
-      widget.store.entries,
-      widget.config,
-    );
+    final stats = FerretStats.fromStore(widget.store.entries, widget.config);
 
     return FerretTheme.wrap(
       context,
@@ -177,9 +174,9 @@ class _FerretDashboardState extends State<FerretDashboard> {
   Future<void> _openExportSheet(BuildContext context) async {
     final entries = widget.store.entries;
     if (entries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nothing to export')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nothing to export')));
       return;
     }
 
@@ -303,8 +300,13 @@ class _SearchPanel extends StatelessWidget {
                 },
               ),
               const SizedBox(width: 8),
-              for (final method
-                  in const ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) ...[
+              for (final method in const [
+                'GET',
+                'POST',
+                'PUT',
+                'PATCH',
+                'DELETE',
+              ]) ...[
                 FilterChip(
                   label: Text(method),
                   selected: filter.methods.contains(method),
@@ -349,15 +351,12 @@ class _CallsList extends StatelessWidget {
       final message = storeEmpty
           ? 'No HTTP calls yet.\nFire a request to see it here.'
           : filteredEmpty
-              ? 'No calls match your filters.\nTry adjusting search or chips.'
-              : 'No HTTP calls yet.\nFire a request to see it here.';
+          ? 'No calls match your filters.\nTry adjusting search or chips.'
+          : 'No HTTP calls yet.\nFire a request to see it here.';
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-          ),
+          child: Text(message, textAlign: TextAlign.center),
         ),
       );
     }
@@ -378,8 +377,8 @@ class _CallsList extends StatelessWidget {
         final methodColor = failed
             ? scheme.error
             : slow
-                ? scheme.tertiary
-                : scheme.primary;
+            ? scheme.tertiary
+            : scheme.primary;
 
         return InkWell(
           onTap: () => onOpen(entry),
@@ -418,8 +417,8 @@ class _CallsList extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Wrap(
@@ -473,9 +472,7 @@ class _CallsList extends StatelessWidget {
                   icon: const Icon(Icons.copy_rounded, size: 20),
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(
-                        text: const CurlExporter().export(entry),
-                      ),
+                      ClipboardData(text: const CurlExporter().export(entry)),
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

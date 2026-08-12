@@ -8,8 +8,8 @@ import 'ferret_entry.dart';
 /// is dropped.
 class FerretStore extends ChangeNotifier {
   FerretStore({required int maxEntries})
-      : assert(maxEntries > 0),
-        _maxEntries = maxEntries;
+    : assert(maxEntries > 0),
+      _maxEntries = maxEntries;
 
   int _maxEntries;
   final List<FerretEntry> _entries = <FerretEntry>[];

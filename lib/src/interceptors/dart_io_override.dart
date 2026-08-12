@@ -10,7 +10,7 @@ import '../core/ferret_engine.dart';
 /// Installs [HttpOverrides.global] to capture raw `dart:io` HTTP traffic.
 class FerretDartIoOverride extends HttpOverrides {
   FerretDartIoOverride(this._engine, {HttpOverrides? previous})
-      : _previous = previous;
+    : _previous = previous;
 
   final FerretEngine _engine;
   final HttpOverrides? _previous;
@@ -69,7 +69,10 @@ class _FerretIoHttpClient implements HttpClient {
     int port,
     String path,
   ) {
-    return openUrl(method, Uri(scheme: 'http', host: host, port: port, path: path));
+    return openUrl(
+      method,
+      Uri(scheme: 'http', host: host, port: port, path: path),
+    );
   }
 
   // Forward remaining HttpClient API -----------------------------------------
@@ -112,8 +115,7 @@ class _FerretIoHttpClient implements HttpClient {
     Uri url,
     String realm,
     HttpClientCredentials credentials,
-  ) =>
-      _inner.addCredentials(url, realm, credentials);
+  ) => _inner.addCredentials(url, realm, credentials);
 
   @override
   void addProxyCredentials(
@@ -121,8 +123,7 @@ class _FerretIoHttpClient implements HttpClient {
     int port,
     String realm,
     HttpClientCredentials credentials,
-  ) =>
-      _inner.addProxyCredentials(host, port, realm, credentials);
+  ) => _inner.addProxyCredentials(host, port, realm, credentials);
 
   @override
   Future<HttpClientRequest> delete(String host, int port, String path) =>
@@ -172,9 +173,9 @@ class _FerretIoHttpClient implements HttpClient {
       Uri url,
       String? proxyHost,
       int? proxyPort,
-    )? f,
-  ) =>
-      _inner.connectionFactory = f;
+    )?
+    f,
+  ) => _inner.connectionFactory = f;
 
   @override
   // ignore: inference_failure_on_function_return_type
@@ -183,15 +184,13 @@ class _FerretIoHttpClient implements HttpClient {
   @override
   set authenticate(
     Future<bool> Function(Uri url, String scheme, String? realm)? f,
-  ) =>
-      _inner.authenticate = f;
+  ) => _inner.authenticate = f;
 
   @override
   set authenticateProxy(
     Future<bool> Function(String host, int port, String scheme, String? realm)?
-        f,
-  ) =>
-      _inner.authenticateProxy = f;
+    f,
+  ) => _inner.authenticateProxy = f;
 
   @override
   set findProxy(String Function(Uri url)? f) => _inner.findProxy = f;
@@ -199,8 +198,7 @@ class _FerretIoHttpClient implements HttpClient {
   @override
   set badCertificateCallback(
     bool Function(X509Certificate cert, String host, int port)? callback,
-  ) =>
-      _inner.badCertificateCallback = callback;
+  ) => _inner.badCertificateCallback = callback;
 }
 
 class _FerretIoHttpClientRequest implements HttpClientRequest {
@@ -276,10 +274,7 @@ class _FerretIoHttpClientRequest implements HttpClientRequest {
       } on Object {
         requestBody = raw;
       }
-      _engine.store.update(
-        id,
-        (e) => e.copyWith(requestBody: requestBody),
-      );
+      _engine.store.update(id, (e) => e.copyWith(requestBody: requestBody));
     }
 
     try {
@@ -479,8 +474,7 @@ class _FerretIoHttpClientResponse extends Stream<List<int>>
     String? method,
     Uri? url,
     bool? followLoops,
-  ]) =>
-      _inner.redirect(method, url, followLoops);
+  ]) => _inner.redirect(method, url, followLoops);
 
   @override
   List<RedirectInfo> get redirects => _inner.redirects;

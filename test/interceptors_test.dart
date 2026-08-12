@@ -96,10 +96,7 @@ void main() {
   group('FerretHttpClient', () {
     test('captures request and reconstitutes response bytes', () async {
       final store = FerretStore(maxEntries: 10);
-      final engine = FerretEngine(
-        store: store,
-        config: const FerretConfig(),
-      );
+      final engine = FerretEngine(store: store, config: const FerretConfig());
       final client = FerretHttpClient(_FakeHttpClient(), engine);
       final response = await client.get(Uri.parse('https://example.com/api'));
       expect(response.statusCode, 200);
@@ -112,10 +109,7 @@ void main() {
 
     test('records failures and rethrows', () async {
       final store = FerretStore(maxEntries: 10);
-      final engine = FerretEngine(
-        store: store,
-        config: const FerretConfig(),
-      );
+      final engine = FerretEngine(store: store, config: const FerretConfig());
       final client = FerretHttpClient(_FailingHttpClient(), engine);
       await expectLater(
         () => client.get(Uri.parse('https://example.com')),

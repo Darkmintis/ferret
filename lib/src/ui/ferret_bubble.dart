@@ -57,14 +57,10 @@ class _FerretBubbleState extends State<FerretBubble> {
   }
 
   Offset _defaultOffset(Size size) {
-    return Offset(
-      size.width - _size - _edgePad,
-      (size.height - _size) / 2,
-    );
+    return Offset(size.width - _size - _edgePad, (size.height - _size) / 2);
   }
 
-  int get _failedCount =>
-      widget.store.entries.where((e) => e.isFailed).length;
+  int get _failedCount => widget.store.entries.where((e) => e.isFailed).length;
 
   void _onStoreChanged() {
     final failed = _failedCount;
@@ -95,77 +91,74 @@ class _FerretBubbleState extends State<FerretBubble> {
         media.padding.top + 8,
         media.size.height - _size - media.padding.bottom - 24,
       ),
-      child: FerretTheme.wrap(
-        context,
-        (context) {
-          final scheme = Theme.of(context).colorScheme;
-          final background =
-              _errorFlash ? scheme.error : scheme.inverseSurface;
-          final foreground =
-              _errorFlash ? scheme.onError : scheme.onInverseSurface;
+      child: FerretTheme.wrap(context, (context) {
+        final scheme = Theme.of(context).colorScheme;
+        final background = _errorFlash ? scheme.error : scheme.inverseSurface;
+        final foreground = _errorFlash
+            ? scheme.onError
+            : scheme.onInverseSurface;
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (widget.showReleaseTag)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Material(
-                    color: const Color(0xFFB3261E),
-                    borderRadius: BorderRadius.circular(6),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Text(
-                        'FERRET ACTIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
-                        ),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (widget.showReleaseTag)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Material(
+                  color: const Color(0xFFB3261E),
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'FERRET ACTIVE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
                 ),
-              Material(
-                color: background,
-                elevation: 3,
-                shadowColor: Colors.black38,
-                borderRadius: BorderRadius.circular(_radius),
-                clipBehavior: Clip.antiAlias,
-                child: SizedBox(
-                  width: _size,
-                  height: _size,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onPanUpdate: (details) {
-                      setState(() {
-                        _offset = offset + details.delta;
-                      });
-                    },
-                    onTap: widget.onOpen,
-                    child: ColoredBox(
-                      color: background,
-                      child: Center(
-                        child: Text(
-                          '$count',
-                          style: TextStyle(
-                            color: foreground,
-                            fontWeight: FontWeight.w800,
-                            fontSize: count >= 100 ? 14 : 16,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+              ),
+            Material(
+              color: background,
+              elevation: 3,
+              shadowColor: Colors.black38,
+              borderRadius: BorderRadius.circular(_radius),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: _size,
+                height: _size,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanUpdate: (details) {
+                    setState(() {
+                      _offset = offset + details.delta;
+                    });
+                  },
+                  onTap: widget.onOpen,
+                  child: ColoredBox(
+                    color: background,
+                    child: Center(
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          color: foreground,
+                          fontWeight: FontWeight.w800,
+                          fontSize: count >= 100 ? 14 : 16,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

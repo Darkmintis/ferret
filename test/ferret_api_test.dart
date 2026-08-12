@@ -24,11 +24,7 @@ void main() {
     });
 
     test('install active captures via createDio', () async {
-      Ferret.install(
-        config: const FerretConfig(
-          clients: {HttpClientType.dio},
-        ),
-      );
+      Ferret.install(config: const FerretConfig(clients: {HttpClientType.dio}));
       expect(Ferret.isActive, isTrue);
       expect(Ferret.store, isNotNull);
 
@@ -40,9 +36,7 @@ void main() {
 
     test('wrapClient records package:http traffic', () async {
       Ferret.install(
-        config: const FerretConfig(
-          clients: {HttpClientType.http},
-        ),
+        config: const FerretConfig(clients: {HttpClientType.http}),
       );
       final client = Ferret.wrapClient(_FakeHttpClient());
       final response = await client.get(Uri.parse('https://example.com'));
@@ -115,9 +109,6 @@ class _OkAdapter implements HttpClientAdapter {
 class _FakeHttpClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    return http.StreamedResponse(
-      Stream.value(utf8.encode('ok')),
-      200,
-    );
+    return http.StreamedResponse(Stream.value(utf8.encode('ok')), 200);
   }
 }

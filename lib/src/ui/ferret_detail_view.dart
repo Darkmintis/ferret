@@ -19,67 +19,64 @@ class FerretDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FerretTheme.wrap(
-      context,
-      (context) {
-        final scheme = Theme.of(context).colorScheme;
-        final duration = entry.duration;
-        final slow = entry.isSlow(slowThreshold);
+    return FerretTheme.wrap(context, (context) {
+      final scheme = Theme.of(context).colorScheme;
+      final duration = entry.duration;
+      final slow = entry.isSlow(slowThreshold);
 
-        return DefaultTabController(
-          length: 4,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text('${entry.method} ${entry.statusCode ?? '…'}'),
-              actions: [
-                IconButton(
-                  tooltip: 'Copy as cURL',
-                  onPressed: () async {
-                    final curl = const CurlExporter().export(entry);
-                    await Clipboard.setData(ClipboardData(text: curl));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('cURL copied')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.copy_rounded),
-                ),
-              ],
-              bottom: const TabBar(
-                tabs: [
-                  Tab(text: 'Overview'),
-                  Tab(text: 'Request'),
-                  Tab(text: 'Response'),
-                  Tab(text: 'Error'),
-                ],
+      return DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('${entry.method} ${entry.statusCode ?? '…'}'),
+            actions: [
+              IconButton(
+                tooltip: 'Copy as cURL',
+                onPressed: () async {
+                  final curl = const CurlExporter().export(entry);
+                  await Clipboard.setData(ClipboardData(text: curl));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('cURL copied')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.copy_rounded),
               ),
-            ),
-            body: TabBarView(
-              children: [
-                _OverviewTab(
-                  entry: entry,
-                  duration: duration,
-                  slow: slow,
-                  scheme: scheme,
-                ),
-                _MessageTab(
-                  kind: _MessageKind.request,
-                  headers: entry.requestHeaders,
-                  body: entry.requestBody,
-                ),
-                _MessageTab(
-                  kind: _MessageKind.response,
-                  headers: entry.responseHeaders ?? const {},
-                  body: entry.responseBody,
-                ),
-                _ErrorTab(error: entry.error),
+            ],
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Overview'),
+                Tab(text: 'Request'),
+                Tab(text: 'Response'),
+                Tab(text: 'Error'),
               ],
             ),
           ),
-        );
-      },
-    );
+          body: TabBarView(
+            children: [
+              _OverviewTab(
+                entry: entry,
+                duration: duration,
+                slow: slow,
+                scheme: scheme,
+              ),
+              _MessageTab(
+                kind: _MessageKind.request,
+                headers: entry.requestHeaders,
+                body: entry.requestBody,
+              ),
+              _MessageTab(
+                kind: _MessageKind.response,
+                headers: entry.responseHeaders ?? const {},
+                body: entry.responseBody,
+              ),
+              _ErrorTab(error: entry.error),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }
 
@@ -103,9 +100,9 @@ class _OverviewTab extends StatelessWidget {
       children: [
         SelectableText(
           entry.url.toString(),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -134,9 +131,9 @@ class _OverviewTab extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'Started',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 4),
         Text(entry.startTime.toIso8601String()),
@@ -196,9 +193,9 @@ class _MessageTab extends StatelessWidget {
           if (headers.isNotEmpty) ...[
             Text(
               'Headers:',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -219,9 +216,9 @@ class _MessageTab extends StatelessWidget {
             if (headers.isNotEmpty) const SizedBox(height: 16),
             Text(
               'Body:',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -318,17 +315,17 @@ class _EmptyState extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

@@ -63,7 +63,8 @@ void main() {
     });
 
     test('update replaces by id and returns false when missing', () {
-      final store = FerretStore(maxEntries: 10)..add(testEntry('a', status: null));
+      final store = FerretStore(maxEntries: 10)
+        ..add(testEntry('a', status: null));
       expect(
         store.update(
           'a',
@@ -119,10 +120,7 @@ void main() {
   group('FerretEngine', () {
     test('begin uppercases method and stores request', () {
       final store = FerretStore(maxEntries: 10);
-      final engine = FerretEngine(
-        store: store,
-        config: const FerretConfig(),
-      );
+      final engine = FerretEngine(store: store, config: const FerretConfig());
       final entry = engine.begin(
         client: HttpClientType.dio,
         method: 'post',
@@ -147,11 +145,7 @@ void main() {
         url: Uri.parse('https://example.com'),
         requestBody: 'secret',
       );
-      engine.complete(
-        id: entry.id,
-        statusCode: 200,
-        responseBody: 'visible',
-      );
+      engine.complete(id: entry.id, statusCode: 200, responseBody: 'visible');
       final saved = store.getById(entry.id)!;
       expect(saved.requestBody, isNull);
       expect(saved.responseBody, isNull);
@@ -161,10 +155,7 @@ void main() {
 
     test('complete sets sizeBytes and clears previous error', () {
       final store = FerretStore(maxEntries: 10);
-      final engine = FerretEngine(
-        store: store,
-        config: const FerretConfig(),
-      );
+      final engine = FerretEngine(store: store, config: const FerretConfig());
       final entry = engine.begin(
         client: HttpClientType.http,
         method: 'GET',
@@ -255,8 +246,9 @@ void main() {
 
   group('FerretConfig', () {
     test('copyWith updates fields', () {
-      final config = const FerretConfig(maxEntries: 100)
-          .copyWith(enabled: false);
+      final config = const FerretConfig(
+        maxEntries: 100,
+      ).copyWith(enabled: false);
       expect(config.enabled, isFalse);
       expect(config.maxEntries, 100);
     });
@@ -275,8 +267,10 @@ void main() {
         testEntry('ok', status: 200, method: 'GET'),
         testEntry('bad', status: 500, method: 'POST'),
       ];
-      final filtered = const FerretFilter(failedOnly: true, methods: {'POST'})
-          .apply(entries, slowThreshold: const Duration(seconds: 2));
+      final filtered = const FerretFilter(
+        failedOnly: true,
+        methods: {'POST'},
+      ).apply(entries, slowThreshold: const Duration(seconds: 2));
       expect(filtered.map((e) => e.id), ['bad']);
     });
 
@@ -321,8 +315,9 @@ void main() {
     test('isActive and copyWith clearDomain', () {
       expect(FerretFilter.empty.isActive, isFalse);
       expect(const FerretFilter(failedOnly: true).isActive, isTrue);
-      final cleared =
-          const FerretFilter(domain: 'x').copyWith(clearDomain: true);
+      final cleared = const FerretFilter(
+        domain: 'x',
+      ).copyWith(clearDomain: true);
       expect(cleared.domain, isNull);
     });
   });
@@ -367,7 +362,10 @@ void main() {
       expect(empty.statusLine, '0 calls');
 
       final store = FerretStore(maxEntries: 5)..add(testEntry('1'));
-      final fromStore = FerretStats.fromStore(store.entries, const FerretConfig());
+      final fromStore = FerretStats.fromStore(
+        store.entries,
+        const FerretConfig(),
+      );
       expect(fromStore.total, 1);
     });
   });

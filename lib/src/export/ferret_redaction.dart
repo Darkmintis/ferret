@@ -45,20 +45,19 @@ class FerretRedaction {
   /// URL with sensitive query values redacted (keeps structure for HAR).
   static Uri url(Uri input) {
     if (input.queryParameters.isEmpty) return input;
-    return input.replace(queryParameters: queryParameters(input.queryParameters));
+    return input.replace(
+      queryParameters: queryParameters(input.queryParameters),
+    );
   }
 
   static Object body(Object body) {
     if (body is Map) {
       return <Object?, Object?>{
-        for (final e in body.entries)
-          e.key: _redactMapValue(e.key, e.value),
+        for (final e in body.entries) e.key: _redactMapValue(e.key, e.value),
       };
     }
     if (body is List) {
-      return <Object?>[
-        for (final item in body) _redactNested(item),
-      ];
+      return <Object?>[for (final item in body) _redactNested(item)];
     }
     if (body is String) {
       return body

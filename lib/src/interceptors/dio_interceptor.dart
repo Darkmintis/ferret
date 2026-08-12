@@ -44,7 +44,10 @@ class FerretDioInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     _popScope(response.requestOptions);
     final id = response.requestOptions.extra[_entryIdExtra] as String?;
     if (id != null) {

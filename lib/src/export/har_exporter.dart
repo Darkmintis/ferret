@@ -19,10 +19,7 @@ class HarExporter {
     final log = <String, Object?>{
       'log': {
         'version': '1.2',
-        'creator': {
-          'name': creatorName,
-          'version': creatorVersion,
-        },
+        'creator': {'name': creatorName, 'version': creatorVersion},
         'entries': [
           for (final entry in sorted) _toHarEntry(entry, redact: redact),
         ],
@@ -58,18 +55,17 @@ class HarExporter {
         'httpVersion': 'HTTP/1.1',
         'cookies': <Object?>[],
         'headers': [
-          for (final e in headers.entries)
-            {'name': e.key, 'value': e.value},
+          for (final e in headers.entries) {'name': e.key, 'value': e.value},
         ],
         'queryString': [
-          for (final e in query.entries)
-            {'name': e.key, 'value': e.value},
+          for (final e in query.entries) {'name': e.key, 'value': e.value},
         ],
         'headersSize': -1,
         'bodySize': _bodySize(body),
         if (body != null)
           'postData': {
-            'mimeType': headers['content-type'] ??
+            'mimeType':
+                headers['content-type'] ??
                 headers['Content-Type'] ??
                 'application/json',
             'text': FerretRedaction.stringifyBody(
@@ -88,15 +84,14 @@ class HarExporter {
         ],
         'content': {
           'size': _bodySize(responseBody),
-          'mimeType': responseHeaders['content-type'] ??
+          'mimeType':
+              responseHeaders['content-type'] ??
               responseHeaders['Content-Type'] ??
               'application/octet-stream',
           'text': responseBody == null
               ? ''
               : FerretRedaction.stringifyBody(
-                  redact
-                      ? FerretRedaction.body(responseBody)
-                      : responseBody,
+                  redact ? FerretRedaction.body(responseBody) : responseBody,
                 ),
         },
         'redirectURL': '',
@@ -104,11 +99,7 @@ class HarExporter {
         'bodySize': _bodySize(responseBody),
       },
       'cache': <String, Object?>{},
-      'timings': {
-        'send': 0,
-        'wait': time,
-        'receive': 0,
-      },
+      'timings': {'send': 0, 'wait': time, 'receive': 0},
     };
   }
 

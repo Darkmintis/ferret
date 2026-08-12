@@ -20,31 +20,19 @@ class FerretActivation {
   final bool showReleaseWarning;
 
   /// Compute activation from [config] and build mode.
-  factory FerretActivation.resolve(
-    FerretConfig config, {
-    bool? isReleaseMode,
-  }) {
+  factory FerretActivation.resolve(FerretConfig config, {bool? isReleaseMode}) {
     final release = isReleaseMode ?? kReleaseMode;
 
     if (release) {
       if (!config.enableInRelease) {
-        return const FerretActivation(
-          active: false,
-          showReleaseWarning: false,
-        );
+        return const FerretActivation(active: false, showReleaseWarning: false);
       }
       // Release + explicit opt-in: warning is permanent and cannot be disabled.
-      return const FerretActivation(
-        active: true,
-        showReleaseWarning: true,
-      );
+      return const FerretActivation(active: true, showReleaseWarning: true);
     }
 
     // debug / profile
-    return FerretActivation(
-      active: config.enabled,
-      showReleaseWarning: false,
-    );
+    return FerretActivation(active: config.enabled, showReleaseWarning: false);
   }
 }
 

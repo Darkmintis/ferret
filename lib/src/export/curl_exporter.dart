@@ -22,8 +22,7 @@ class CurlExporter {
 
     final body = entry.requestBody;
     if (body != null) {
-      final Object redactedOrRaw =
-          redact ? FerretRedaction.body(body) : body;
+      final Object redactedOrRaw = redact ? FerretRedaction.body(body) : body;
       final payload = FerretRedaction.stringifyBody(redactedOrRaw);
       if (payload.isNotEmpty) {
         buffer.write(' \\\n  --data-raw \'${_escape(payload)}\'');
@@ -33,6 +32,5 @@ class CurlExporter {
     return buffer.toString();
   }
 
-  static String _escape(String value) =>
-      value.replaceAll("'", r"'\''");
+  static String _escape(String value) => value.replaceAll("'", r"'\''");
 }

@@ -8,11 +8,9 @@ import 'ferret_store.dart';
 
 /// Capture pipeline: creates entries, sizes bodies, completes requests.
 class FerretEngine {
-  FerretEngine({
-    required FerretStore store,
-    required FerretConfig config,
-  })  : _store = store,
-        _config = config;
+  FerretEngine({required FerretStore store, required FerretConfig config})
+    : _store = store,
+      _config = config;
 
   final FerretStore _store;
   FerretConfig _config;
