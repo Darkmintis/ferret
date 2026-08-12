@@ -12,7 +12,7 @@ import 'package:http/testing.dart';
 
 void main() {
   testWidgets('example app loads posts from use-case button', (tester) async {
-    Ferret.install(config: const FerretConfig(showNotification: false));
+    Ferret.install();
 
     final repository = FeedRepository(
       dio: Dio()
