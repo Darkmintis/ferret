@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// Shared secret redaction for exports (cURL, HAR, SVG, session).
+/// Shared secret redaction for exports (cURL and HAR).
 class FerretRedaction {
   const FerretRedaction._();
 
@@ -47,9 +47,6 @@ class FerretRedaction {
     if (input.queryParameters.isEmpty) return input;
     return input.replace(queryParameters: queryParameters(input.queryParameters));
   }
-
-  /// URL with the query string stripped entirely (text / markdown / SVG cards).
-  static Uri urlWithoutQuery(Uri input) => input.replace(query: '');
 
   static Object body(Object body) {
     if (body is Map) {
