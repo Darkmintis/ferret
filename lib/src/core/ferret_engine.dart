@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:math';
 
 import '../config/ferret_config.dart';
 import '../config/http_client_type.dart';
 import 'ferret_entry.dart';
+import 'ferret_message_size.dart';
 import 'ferret_store.dart';
 
 /// Capture pipeline: creates entries, sizes bodies, completes requests.
@@ -73,12 +73,15 @@ class FerretEngine {
             : Map<String, String>.unmodifiable(responseHeaders),
         responseBody: body ?? current.responseBody,
         endTime: ended,
-        sizeBytes: _estimateSize(
-          requestHeaders: current.requestHeaders,
-          requestBody: current.requestBody,
-          responseHeaders: responseHeaders ?? current.responseHeaders,
-          responseBody: body ?? current.responseBody,
-        ),
+        sizeBytes:
+            FerretMessageSize.bytes(
+              headers: current.requestHeaders,
+              body: current.requestBody,
+            ) +
+            FerretMessageSize.bytes(
+              headers: responseHeaders ?? current.responseHeaders ?? const {},
+              body: body ?? current.responseBody,
+            ),
         error: error,
         clearError: error == null,
       );
@@ -98,40 +101,5 @@ class FerretEngine {
       return body;
     }
     return body.toString();
-  }
-
-  static int _estimateSize({
-    required Map<String, String> requestHeaders,
-    required Object? requestBody,
-    required Map<String, String>? responseHeaders,
-    required Object? responseBody,
-  }) {
-    var total = 0;
-    total += _headersBytes(requestHeaders);
-    total += _bodyBytes(requestBody);
-    if (responseHeaders != null) {
-      total += _headersBytes(responseHeaders);
-    }
-    total += _bodyBytes(responseBody);
-    return total;
-  }
-
-  static int _headersBytes(Map<String, String> headers) {
-    var n = 0;
-    headers.forEach((k, v) {
-      n += k.length + v.length + 4;
-    });
-    return n;
-  }
-
-  static int _bodyBytes(Object? body) {
-    if (body == null) return 0;
-    if (body is List<int>) return body.length;
-    if (body is String) return utf8.encode(body).length;
-    try {
-      return utf8.encode(jsonEncode(body)).length;
-    } on Object {
-      return utf8.encode(body.toString()).length;
-    }
   }
 }

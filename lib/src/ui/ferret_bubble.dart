@@ -1,14 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../core/ferret_store.dart';
+import 'ferret_bubble_button.dart';
+import 'ferret_bubble_flash.dart';
+import 'ferret_bubble_layout.dart';
+import 'ferret_release_tag.dart';
 import 'ferret_theme.dart';
 
 /// Simple floating count button. Tap opens the full inspector.
-///
-/// Starts near the vertical center on the right edge. Shows only the API call
-/// count. Flashes red briefly when a new failed call is captured.
 class FerretBubble extends StatefulWidget {
   const FerretBubble({
     super.key,
@@ -26,135 +25,70 @@ class FerretBubble extends StatefulWidget {
 }
 
 class _FerretBubbleState extends State<FerretBubble> {
-  static const _flashDuration = Duration(seconds: 2);
-  static const _size = 52.0;
-  static const _radius = 14.0;
-  static const _edgePad = 16.0;
-
+  late final FerretBubbleFlash _flash;
   Offset? _offset;
-  int _lastFailed = 0;
-  bool _errorFlash = false;
-  Timer? _flashTimer;
 
   @override
   void initState() {
     super.initState();
-    _lastFailed = _failedCount;
-    widget.store.addListener(_onStoreChanged);
+    _flash = FerretBubbleFlash(widget.store);
+    widget.store.addListener(_onStore);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _offset ??= _defaultOffset(MediaQuery.sizeOf(context));
+    _offset ??= FerretBubbleLayout.defaultOffset(MediaQuery.sizeOf(context));
   }
 
   @override
   void dispose() {
-    _flashTimer?.cancel();
-    widget.store.removeListener(_onStoreChanged);
+    widget.store.removeListener(_onStore);
+    _flash.dispose();
     super.dispose();
   }
 
-  Offset _defaultOffset(Size size) {
-    return Offset(size.width - _size - _edgePad, (size.height - _size) / 2);
-  }
-
-  int get _failedCount => widget.store.entries.where((e) => e.isFailed).length;
-
-  void _onStoreChanged() {
-    final failed = _failedCount;
-    if (failed > _lastFailed) {
-      _flashError();
-    }
-    _lastFailed = failed;
-    if (mounted) setState(() {});
-  }
-
-  void _flashError() {
-    _flashTimer?.cancel();
-    setState(() => _errorFlash = true);
-    _flashTimer = Timer(_flashDuration, () {
-      if (mounted) setState(() => _errorFlash = false);
+  void _onStore() {
+    _flash.onStoreChanged(() {
+      if (mounted) setState(() {});
     });
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final count = widget.store.length;
-    final offset = _offset ?? _defaultOffset(media.size);
+    final offset = FerretBubbleLayout.clamp(
+      _offset ?? FerretBubbleLayout.defaultOffset(media.size),
+      media,
+    );
 
     return Positioned(
-      left: offset.dx.clamp(8.0, media.size.width - _size - 8),
-      top: offset.dy.clamp(
-        media.padding.top + 8,
-        media.size.height - _size - media.padding.bottom - 24,
-      ),
+      left: offset.dx,
+      top: offset.dy,
       child: FerretTheme.wrap(context, (context) {
         final scheme = Theme.of(context).colorScheme;
-        final background = _errorFlash ? scheme.error : scheme.inverseSurface;
-        final foreground = _errorFlash
-            ? scheme.onError
-            : scheme.onInverseSurface;
+        final flash = _flash.errorFlash;
+        final background = flash ? scheme.error : scheme.inverseSurface;
+        final foreground = flash ? scheme.onError : scheme.onInverseSurface;
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (widget.showReleaseTag)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Material(
-                  color: const Color(0xFFB3261E),
-                  borderRadius: BorderRadius.circular(6),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: Text(
-                      'FERRET ACTIVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                  ),
-                ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 6),
+                child: FerretReleaseTag(),
               ),
-            Material(
-              color: background,
-              elevation: 3,
-              shadowColor: Colors.black38,
-              borderRadius: BorderRadius.circular(_radius),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: _size,
-                height: _size,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onPanUpdate: (details) {
-                    setState(() {
-                      _offset = offset + details.delta;
-                    });
-                  },
-                  onTap: widget.onOpen,
-                  child: ColoredBox(
-                    color: background,
-                    child: Center(
-                      child: Text(
-                        '$count',
-                        style: TextStyle(
-                          color: foreground,
-                          fontWeight: FontWeight.w800,
-                          fontSize: count >= 100 ? 14 : 16,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            FerretBubbleButton(
+              count: widget.store.length,
+              background: background,
+              foreground: foreground,
+              onTap: widget.onOpen,
+              onPanUpdate: (details) {
+                setState(() => _offset = offset + details.delta);
+              },
             ),
           ],
         );
