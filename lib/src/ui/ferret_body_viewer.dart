@@ -57,9 +57,7 @@ abstract final class FerretBodyViewer {
   }
 }
 
-/// Header line with a bold name and value aligned in a right-hand column.
-///
-/// Multi-line values stay indented under the value (to the right of `name:`).
+/// Header line with a bold name and wrapping value (safe on narrow widths).
 class FerretHeaderLine extends StatelessWidget {
   const FerretHeaderLine({
     super.key,
@@ -75,17 +73,15 @@ class FerretHeaderLine extends StatelessWidget {
     final base = Theme.of(context).textTheme.bodyMedium;
     final keyStyle = base?.copyWith(fontWeight: FontWeight.w700);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$name: ', style: keyStyle),
-        Expanded(
-          child: SelectableText(
-            value,
-            style: base,
-          ),
-        ),
-      ],
+    // Single flowing text — avoids Row overflow on half-width compare panes.
+    return SelectableText.rich(
+      TextSpan(
+        style: base,
+        children: [
+          TextSpan(text: '$name: ', style: keyStyle),
+          TextSpan(text: value),
+        ],
+      ),
     );
   }
 }
