@@ -14,16 +14,13 @@ import 'core/ferret_entry.dart';
 import 'core/ferret_store.dart';
 import 'export/curl_exporter.dart';
 import 'export/har_exporter.dart';
-import 'export/mirror_server.dart';
-import 'export/session_exporter.dart';
 import 'export/share_exporter.dart';
-import 'export/svg_exporter.dart';
-import 'interceptors/dart_io_override.dart';
+import 'interceptors/dart_io_override_stub.dart'
+    if (dart.library.io) 'interceptors/dart_io_override.dart';
 import 'interceptors/dio_interceptor.dart';
 import 'interceptors/http_wrapper.dart';
 import 'ui/ferret_bubble.dart';
 import 'ui/ferret_dashboard.dart';
-import 'ui/ferret_notification_service.dart';
 
 /// Ferret — modern, production-safe HTTP inspector for Flutter.
 ///
@@ -40,8 +37,6 @@ class Ferret {
   static FerretStore? _store;
   static FerretEngine? _engine;
   static FerretDioInterceptor? _dioInterceptor;
-  static FerretMirrorServer? _mirror;
-  static FerretNotificationService? _notifications;
   static FerretActivation _activation = const FerretActivation(
     active: false,
     showReleaseWarning: false,
@@ -79,18 +74,22 @@ class Ferret {
   }
 
   /// One-line install. Safe to call before [runApp].
+  ///
+  /// Calling again tears down the previous install and applies [config].
   static void install({FerretConfig config = const FerretConfig()}) {
+    if (_installed) {
+      _tearDown();
+    }
+
     _config = config;
     _activation = FerretActivation.resolve(config);
 
     if (!_activation.active) {
-      _tearDown();
       _installed = true;
       return;
     }
 
-    _store ??= FerretStore(maxEntries: config.maxEntries);
-    _store!.setMaxEntries(config.maxEntries);
+    _store = FerretStore(maxEntries: config.maxEntries);
     _engine = FerretEngine(store: _store!, config: config);
     _dioInterceptor = FerretDioInterceptor(_engine!);
 
@@ -100,27 +99,6 @@ class Ferret {
 
     if (_activation.showReleaseWarning) {
       printFerretReleaseWarning();
-    }
-
-    if (config.showNotification && !kIsWeb) {
-      _notifications ??= FerretNotificationService();
-      unawaited(
-        _notifications!.start(
-          store: _store!,
-          config: config,
-          showReleaseTitle: _activation.showReleaseWarning,
-        ),
-      );
-    }
-
-    final mirrorPort = config.mirrorPort;
-    if (mirrorPort != null && !kIsWeb) {
-      _mirror ??= FerretMirrorServer(_store!);
-      unawaited(
-        _mirror!.start(port: mirrorPort).then((uri) {
-          debugPrint('Ferret mirror: $uri');
-        }),
-      );
     }
 
     _installed = true;
@@ -166,12 +144,6 @@ class Ferret {
   }
 
   /// Opens the dashboard as a full-screen route.
-  ///
-  /// Prefer attaching [navigatorKey] to your [MaterialApp] so this works from
-  /// [builder] (the bubble sits above the navigator in the widget tree).
-  ///
-  /// Safe to call repeatedly — only one inspector is shown at a time, and the
-  /// floating button is hidden while it is open.
   static Future<void> openDashboard([BuildContext? context]) async {
     if (!_activation.active || _store == null) return;
     if (_inspectorOpen.value) return;
@@ -201,7 +173,6 @@ class Ferret {
             return FerretDashboard(
               store: _store!,
               config: _config,
-              onReplay: replay,
               onClear: clear,
             );
           },
@@ -247,115 +218,24 @@ class Ferret {
     return const CurlExporter().export(entry, redact: redact);
   }
 
-  /// Export one call as an SVG of a detail tab (full content).
-  static String toSvgPane(
-    FerretEntry entry, {
-    FerretSvgPane pane = FerretSvgPane.overview,
-    bool redact = false,
-  }) {
-    return const SvgExporter().exportEntry(
-      entry,
-      pane: pane,
-      redact: redact,
-    );
-  }
-
-  /// Export one or more entries as SVG summary cards.
-  static String toSvg(
-    List<FerretEntry> entries, {
-    bool redact = false,
-  }) {
-    return const SvgExporter().export(entries, redact: redact);
-  }
-
   /// Export the session as HAR JSON.
   static String toHar({bool redact = false}) {
     final entries = _store?.entries ?? const <FerretEntry>[];
     return const HarExporter().export(entries, redact: redact);
   }
 
-  /// Save one call's detail-tab SVG to device storage. Returns the file path.
-  static Future<String> saveSvgPane(
-    FerretEntry entry, {
-    FerretSvgPane pane = FerretSvgPane.overview,
-    bool redact = false,
-  }) {
-    return const ShareExporter().saveEntrySvg(
-      entry,
-      pane: pane,
-      redact: redact,
-    );
-  }
-
-  /// Share the session via the platform share sheet.
-  static Future<void> shareSession({
-    bool redact = false,
-    FerretExportFormat format = FerretExportFormat.har,
-  }) async {
+  /// Share the session as HAR via the platform share sheet.
+  static Future<void> shareSession({bool redact = false}) async {
     final entries = _store?.entries ?? const <FerretEntry>[];
-    await const ShareExporter().shareSession(
-      entries,
-      config: _config,
-      format: format,
-      redact: redact,
-    );
+    await const ShareExporter().shareSessionHar(entries, redact: redact);
   }
 
-  /// Share one captured call via the platform share sheet.
-  ///
-  /// For SVG, [pane] chooses which detail tab to render in full.
-  static Future<void> shareEntry(
-    FerretEntry entry, {
-    bool redact = false,
-    FerretExportFormat format = FerretExportFormat.svg,
-    FerretSvgPane pane = FerretSvgPane.overview,
-  }) async {
-    await const ShareExporter().shareEntry(
-      entry,
-      config: _config,
-      format: format,
-      pane: pane,
-      redact: redact,
-    );
-  }
-
-  /// Replays a captured request using Dio.
-  static Future<void> replay(FerretEntry entry) async {
-    if (!_activation.active) return;
-    final dio = createDio();
-    try {
-      await dio.request<dynamic>(
-        entry.url.toString(),
-        data: entry.requestBody,
-        options: Options(
-          method: entry.method,
-          headers: entry.requestHeaders,
-          validateStatus: (_) => true,
-        ),
-      );
-    } on Object catch (error, stackTrace) {
-      debugPrint('Ferret replay failed: $error\n$stackTrace');
-    }
-  }
-
-  /// Wraps [app] — prefer [builder] on your [MaterialApp] instead.
-  static Widget wrap(Widget app) {
-    if (!_activation.active) return app;
-    return _FerretAppHost(child: app);
+  /// Share one captured call as cURL.
+  static Future<void> shareCurl(FerretEntry entry, {bool redact = false}) async {
+    await const ShareExporter().shareCurl(entry, redact: redact);
   }
 
   /// Attach Ferret to [MaterialApp.builder] / [CupertinoApp.builder].
-  ///
-  /// Also set [navigatorKey] on your app so the floating button can open
-  /// the inspector:
-  ///
-  /// ```dart
-  /// MaterialApp(
-  ///   navigatorKey: Ferret.navigatorKey,
-  ///   builder: Ferret.builder,
-  ///   home: HomePage(),
-  /// )
-  /// ```
   static Widget builder(BuildContext context, Widget? child) {
     if (!_activation.active || _store == null) {
       return child ?? const SizedBox.shrink();
@@ -385,10 +265,6 @@ class Ferret {
     hideOverlay();
     _inspectorOpen.value = false;
     FerretDartIoOverride.uninstall();
-    unawaited(_notifications?.stop());
-    _notifications = null;
-    unawaited(_mirror?.stop());
-    _mirror = null;
     _dioInterceptor = null;
     _engine = null;
     _store?.dispose();
@@ -402,18 +278,4 @@ class Ferret {
 
 class _NoopInterceptor extends Interceptor {
   const _NoopInterceptor();
-}
-
-class _FerretAppHost extends StatefulWidget {
-  const _FerretAppHost({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_FerretAppHost> createState() => _FerretAppHostState();
-}
-
-class _FerretAppHostState extends State<_FerretAppHost> {
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
