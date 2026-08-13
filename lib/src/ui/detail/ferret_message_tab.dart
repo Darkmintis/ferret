@@ -21,7 +21,6 @@ class FerretMessageTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final isRequest = kind == FerretMessageKind.request;
     final headers = isRequest
         ? entry.requestHeaders
@@ -32,7 +31,7 @@ class FerretMessageTab extends StatelessWidget {
         FerretMessageSize.header(headers, 'content-type') ?? '—';
 
     return ColoredBox(
-      color: scheme.surface,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
         padding: EdgeInsets.fromLTRB(
           16,

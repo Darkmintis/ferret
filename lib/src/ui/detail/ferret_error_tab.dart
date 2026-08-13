@@ -23,7 +23,7 @@ class FerretErrorTab extends StatelessWidget {
     }
 
     return ColoredBox(
-      color: scheme.surface,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
         padding: EdgeInsets.fromLTRB(
           16,

@@ -8,20 +8,25 @@ abstract final class FerretTheme {
   static const Color seed = Color(0xFF1B6B4A);
   static const Color mint = Color(0xFF3DDC97);
 
+  /// Slightly warm grey-white — easier on the eyes than pure white.
+  static const Color lightBackground = Color(0xFFF6F7F8);
+
   static ThemeData of(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final scheme = ColorScheme.fromSeed(
       seedColor: brightness == Brightness.dark ? mint : seed,
       brightness: brightness,
     );
+    final background =
+        brightness == Brightness.dark ? scheme.surface : lightBackground;
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: background,
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
+        backgroundColor: background,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0.5,

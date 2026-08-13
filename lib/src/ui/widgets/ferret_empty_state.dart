@@ -18,7 +18,7 @@ class FerretEmptyState extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return ColoredBox(
-      color: scheme.surface,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
