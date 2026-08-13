@@ -28,7 +28,11 @@ abstract final class FerretUiFeedback {
     }
   }
 
-  static void _show(BuildContext context, String message, {required bool isError}) {
+  static void _show(
+    BuildContext context,
+    String message, {
+    required bool isError,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

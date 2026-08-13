@@ -86,7 +86,9 @@ class FerretHeaderLine extends StatelessWidget {
           TextSpan(text: '$name: ', style: keyStyle),
           TextSpan(
             text: value,
-            style: emphasize ? base?.copyWith(fontWeight: FontWeight.w600) : null,
+            style: emphasize
+                ? base?.copyWith(fontWeight: FontWeight.w600)
+                : null,
           ),
         ],
       ),

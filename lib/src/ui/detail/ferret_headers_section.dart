@@ -33,9 +33,9 @@ class FerretHeadersSection extends StatelessWidget {
           Text(
             'No headers captured',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontStyle: FontStyle.italic,
-                ),
+              color: scheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
           )
         else
           for (final header in sortedHeaders)

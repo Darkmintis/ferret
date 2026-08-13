@@ -35,9 +35,9 @@ class FerretSectionCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: scheme.primary,
-                        ),
+                      fontWeight: FontWeight.w800,
+                      color: scheme.primary,
+                    ),
                   ),
                 ),
                 ?trailing,
@@ -69,9 +69,9 @@ class FerretMetricRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final valueStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: emphasis ? FontWeight.w700 : FontWeight.w500,
-          color: emphasis ? scheme.error : scheme.onSurface,
-        );
+      fontWeight: emphasis ? FontWeight.w700 : FontWeight.w500,
+      color: emphasis ? scheme.error : scheme.onSurface,
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -83,9 +83,9 @@ class FerretMetricRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Expanded(child: SelectableText(value, style: valueStyle)),

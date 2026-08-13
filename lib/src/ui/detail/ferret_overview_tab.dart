@@ -29,16 +29,12 @@ class FerretOverviewTab extends StatelessWidget {
       children: [
         SelectableText(
           entry.url.toString(),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 16),
-        FerretOverviewGeneralCard(
-          entry: entry,
-          duration: duration,
-          slow: slow,
-        ),
+        FerretOverviewGeneralCard(entry: entry, duration: duration, slow: slow),
         const SizedBox(height: 12),
         FerretOverviewTimingCard(entry: entry),
         const SizedBox(height: 12),

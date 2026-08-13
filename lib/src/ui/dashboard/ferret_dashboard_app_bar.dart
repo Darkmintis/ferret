@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../ferret_theme.dart';
 
 /// App bar for the Ferret inspector dashboard.
-class FerretDashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+class FerretDashboardAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const FerretDashboardAppBar({
     super.key,
     required this.subtitle,

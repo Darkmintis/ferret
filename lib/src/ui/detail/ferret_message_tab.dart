@@ -10,11 +10,7 @@ enum FerretMessageKind { request, response }
 
 /// Request or response tab with metadata, headers, and body.
 class FerretMessageTab extends StatelessWidget {
-  const FerretMessageTab({
-    super.key,
-    required this.kind,
-    required this.entry,
-  });
+  const FerretMessageTab({super.key, required this.kind, required this.entry});
 
   final FerretMessageKind kind;
   final FerretEntry entry;

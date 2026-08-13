@@ -17,8 +17,9 @@ abstract final class FerretTheme {
       seedColor: brightness == Brightness.dark ? mint : seed,
       brightness: brightness,
     );
-    final background =
-        brightness == Brightness.dark ? scheme.surface : lightBackground;
+    final background = brightness == Brightness.dark
+        ? scheme.surface
+        : lightBackground;
 
     return ThemeData(
       useMaterial3: true,

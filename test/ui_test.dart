@@ -195,7 +195,9 @@ void main() {
       expect(find.textContaining('content-type:'), findsOneWidget);
     });
 
-    testWidgets('copy cURL and share HAR actions are available', (tester) async {
+    testWidgets('copy cURL and share HAR actions are available', (
+      tester,
+    ) async {
       final entry = completedEntry('1', method: 'POST');
       await tester.pumpWidget(
         MaterialApp(

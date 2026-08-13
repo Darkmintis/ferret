@@ -57,14 +57,8 @@ class FerretDetailView extends StatelessWidget {
           body: TabBarView(
             children: [
               FerretOverviewTab(entry: entry, duration: duration, slow: slow),
-              FerretMessageTab(
-                kind: FerretMessageKind.request,
-                entry: entry,
-              ),
-              FerretMessageTab(
-                kind: FerretMessageKind.response,
-                entry: entry,
-              ),
+              FerretMessageTab(kind: FerretMessageKind.request, entry: entry),
+              FerretMessageTab(kind: FerretMessageKind.response, entry: entry),
               FerretErrorTab(error: entry.error),
             ],
           ),

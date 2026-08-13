@@ -32,9 +32,9 @@ class FerretBodySection extends StatelessWidget {
           Text(
             'Body is empty',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontStyle: FontStyle.italic,
-                ),
+              color: scheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
           )
         else
           SelectableText.rich(

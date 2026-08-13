@@ -30,7 +30,9 @@ class FerretStatusBadge extends StatelessWidget {
     final code = entry.statusCode;
     if (code == null) return const SizedBox.shrink();
 
-    final color = failed ? scheme.error : FerretCallColors.statusColor(code, scheme);
+    final color = failed
+        ? scheme.error
+        : FerretCallColors.statusColor(code, scheme);
     return FerretStatusPill(
       label: '$code',
       color: color,

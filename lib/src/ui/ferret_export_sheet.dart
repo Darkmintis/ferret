@@ -20,14 +20,10 @@ abstract final class FerretExportSheet {
       context,
       title: 'Export session',
       subtitle: 'HAR · cURL per call from the list',
-      onShareHar: (redact) => const ShareExporter().shareSessionHar(
-        entries,
-        redact: redact,
-      ),
-      onCopyHar: (redact) => const ShareExporter().copySessionHar(
-        entries,
-        redact: redact,
-      ),
+      onShareHar: (redact) =>
+          const ShareExporter().shareSessionHar(entries, redact: redact),
+      onCopyHar: (redact) =>
+          const ShareExporter().copySessionHar(entries, redact: redact),
     );
   }
 
@@ -39,14 +35,10 @@ abstract final class FerretExportSheet {
       context,
       title: 'Export call',
       subtitle: '${entry.method} ${entry.url.path}',
-      onShareHar: (redact) => const ShareExporter().shareEntryHar(
-        entry,
-        redact: redact,
-      ),
-      onCopyHar: (redact) => const ShareExporter().copySessionHar(
-        [entry],
-        redact: redact,
-      ),
+      onShareHar: (redact) =>
+          const ShareExporter().shareEntryHar(entry, redact: redact),
+      onCopyHar: (redact) =>
+          const ShareExporter().copySessionHar([entry], redact: redact),
     );
   }
 
