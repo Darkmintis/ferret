@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../ferret_body_viewer.dart';
+import '../ferret_clipboard.dart';
 import '../ferret_header_display.dart';
 import '../widgets/ferret_section_card.dart';
 
@@ -14,9 +15,19 @@ class FerretHeadersSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final sortedHeaders = FerretHeaderDisplay.sorted(headers);
+    final copyText = FerretHeaderDisplay.formatForCopy(headers);
 
     return FerretSectionCard(
       title: 'Headers',
+      trailing: FerretClipboard.copyIcon(
+        tooltip: 'Copy headers',
+        onPressed: () => FerretClipboard.copy(
+          context,
+          text: copyText,
+          successMessage: 'Headers copied',
+          emptyMessage: 'No headers to copy',
+        ),
+      ),
       children: [
         if (sortedHeaders.isEmpty)
           Text(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../ferret_body_viewer.dart';
+import '../ferret_clipboard.dart';
 import '../widgets/ferret_section_card.dart';
 
 /// Body section for request/response detail tabs.
@@ -17,6 +18,15 @@ class FerretBodySection extends StatelessWidget {
 
     return FerretSectionCard(
       title: 'Body',
+      trailing: FerretClipboard.copyIcon(
+        tooltip: 'Copy body',
+        onPressed: () => FerretClipboard.copy(
+          context,
+          text: bodyText,
+          successMessage: 'Body copied',
+          emptyMessage: 'Body is empty',
+        ),
+      ),
       children: [
         if (!hasBody)
           Text(
