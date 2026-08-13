@@ -210,6 +210,29 @@ void main() {
       expect(const CurlExporter().export(entry), contains('curl -X POST'));
     });
 
+    testWidgets('copy headers and body actions are available on request tab', (
+      tester,
+    ) async {
+      final entry = completedEntry(
+        '1',
+        method: 'POST',
+        requestHeaders: const {'content-type': 'application/json'},
+        requestBody: '{"name":"ferret"}',
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FerretDetailView(
+            entry: entry,
+            slowThreshold: const Duration(seconds: 2),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Request'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Copy headers'), findsOneWidget);
+      expect(find.byTooltip('Copy body'), findsOneWidget);
+    });
+
     testWidgets('empty error tab message', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
