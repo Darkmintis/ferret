@@ -6,10 +6,12 @@ class FerretSectionCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.children,
+    this.trailing,
   });
 
   final String title;
   final List<Widget> children;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +29,19 @@ class FerretSectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: scheme.primary,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: scheme.primary,
+                        ),
                   ),
+                ),
+                ?trailing,
+              ],
             ),
             const SizedBox(height: 10),
             ...children,

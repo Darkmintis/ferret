@@ -36,6 +36,11 @@ abstract final class FerretHeaderDisplay {
         lower.contains('apikey');
   }
 
+  /// Plain text for clipboard export (`Name: value` per line).
+  static String formatForCopy(Map<String, String> headers) {
+    return sorted(headers).map((e) => '${e.key}: ${e.value}').join('\n');
+  }
+
   static int _rank(String name) {
     final lower = name.toLowerCase();
     final index = _priority.indexOf(lower);
