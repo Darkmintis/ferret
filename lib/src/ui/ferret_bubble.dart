@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/ferret_store.dart';
@@ -7,7 +10,17 @@ import 'ferret_bubble_layout.dart';
 import 'ferret_release_tag.dart';
 import 'ferret_theme.dart';
 
+/// ponytail: process-local only (survives inspector open/close + hot reload).
+/// Upgrade: shared_preferences if QA needs cross-process restore.
+Offset? _persistedBubblePosition;
+
+/// ponytail: process-local hide (survives hot reload until [reassemble] / restart).
+bool _userHidden = false;
+
+const _kLongPressHide = Duration(milliseconds: 450);
+
 /// Simple floating count button. Tap opens the full inspector.
+/// Long-press hides until hot reload / hot restart (same as Sway).
 class FerretBubble extends StatefulWidget {
   const FerretBubble({
     super.key,
@@ -20,6 +33,18 @@ class FerretBubble extends StatefulWidget {
   final bool showReleaseTag;
   final VoidCallback onOpen;
 
+  /// Clears remembered bubble position (tests / [Ferret.resetForTest]).
+  @visibleForTesting
+  static void clearPersistedPositionForTest() {
+    _persistedBubblePosition = null;
+  }
+
+  /// Clears long-press hide (tests / [Ferret.resetForTest]).
+  @visibleForTesting
+  static void clearUserHiddenForTest() {
+    _userHidden = false;
+  }
+
   @override
   State<FerretBubble> createState() => _FerretBubbleState();
 }
@@ -28,6 +53,7 @@ class _FerretBubbleState extends State<FerretBubble> {
   late final FerretBubbleFlash _flash;
   Offset? _offset;
   double _dragDistance = 0;
+  Timer? _longPressTimer;
 
   @override
   void initState() {
@@ -39,11 +65,23 @@ class _FerretBubbleState extends State<FerretBubble> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _offset ??= FerretBubbleLayout.defaultOffset(MediaQuery.sizeOf(context));
+    _offset ??=
+        _persistedBubblePosition ??
+        FerretBubbleLayout.defaultOffset(MediaQuery.sizeOf(context));
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    if (_userHidden) {
+      _userHidden = false;
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    _longPressTimer?.cancel();
     widget.store.removeListener(_onStore);
     _flash.dispose();
     super.dispose();
@@ -56,8 +94,29 @@ class _FerretBubbleState extends State<FerretBubble> {
     if (mounted) setState(() {});
   }
 
+  void _persistPosition() {
+    if (_offset != null) {
+      _persistedBubblePosition = _offset;
+    }
+  }
+
+  void _hideBubble() {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+    _userHidden = true;
+    if (mounted) setState(() {});
+  }
+
   void _onPanStart(DragStartDetails details) {
     _dragDistance = 0;
+    _longPressTimer?.cancel();
+    _longPressTimer = Timer(_kLongPressHide, () {
+      if (_dragDistance < FerretBubbleLayout.dragTapSlop &&
+          mounted &&
+          !_userHidden) {
+        _hideBubble();
+      }
+    });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -65,11 +124,17 @@ class _FerretBubbleState extends State<FerretBubble> {
     final current =
         _offset ?? FerretBubbleLayout.defaultOffset(media.size);
     _dragDistance += details.delta.distance;
+    if (_dragDistance >= FerretBubbleLayout.dragTapSlop) {
+      _longPressTimer?.cancel();
+      _longPressTimer = null;
+    }
     setState(() => _offset = current + details.delta);
   }
 
   void _onPanEnd(DragEndDetails details) {
-    if (!mounted) return;
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+    if (!mounted || _userHidden) return;
     if (_dragDistance < FerretBubbleLayout.dragTapSlop) {
       widget.onOpen();
       return;
@@ -77,11 +142,16 @@ class _FerretBubbleState extends State<FerretBubble> {
     final media = MediaQuery.of(context);
     final current =
         _offset ?? FerretBubbleLayout.defaultOffset(media.size);
-    setState(() => _offset = FerretBubbleLayout.snapToEdge(current, media));
+    setState(() {
+      _offset = FerretBubbleLayout.snapToEdge(current, media);
+      _persistPosition();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_userHidden) return const SizedBox.shrink();
+
     final media = MediaQuery.of(context);
     final offset = FerretBubbleLayout.clamp(
       _offset ?? FerretBubbleLayout.defaultOffset(media.size),

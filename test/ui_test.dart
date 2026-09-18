@@ -313,6 +313,75 @@ void main() {
       expect(after.dx, closeTo(8 + 24, 1)); // edgeMargin + half size
     });
 
+    testWidgets('remembers position after bubble is remounted', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      addTearDown(FerretBubble.clearPersistedPositionForTest);
+
+      final store = FerretStore(maxEntries: 10)..add(completedEntry('1'));
+
+      Widget bubble() => MaterialApp(
+            home: Scaffold(
+              body: Stack(
+                children: [
+                  FerretBubble(
+                    store: store,
+                    showReleaseTag: false,
+                    onOpen: () {},
+                  ),
+                ],
+              ),
+            ),
+          );
+
+      await tester.pumpWidget(bubble());
+      await tester.drag(find.text('1'), const Offset(-200, -80));
+      await tester.pumpAndSettle();
+      final saved = tester.getCenter(find.text('1'));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(bubble());
+      await tester.pumpAndSettle();
+
+      final restored = tester.getCenter(find.text('1'));
+      expect(restored.dx, closeTo(saved.dx, 1));
+      expect(restored.dy, closeTo(saved.dy, 1));
+    });
+
+    testWidgets('long-press hides the bubble until reassemble', (tester) async {
+      addTearDown(FerretBubble.clearUserHiddenForTest);
+      addTearDown(FerretBubble.clearPersistedPositionForTest);
+
+      final store = FerretStore(maxEntries: 10)..add(completedEntry('1'));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                FerretBubble(
+                  store: store,
+                  showReleaseTag: false,
+                  onOpen: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('1'), findsOneWidget);
+
+      final gesture = await tester.startGesture(tester.getCenter(find.text('1')));
+      await tester.pump(const Duration(milliseconds: 500));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.text('1'), findsNothing);
+
+      // Hot reload restores via reassemble.
+      tester.binding.reassembleApplication();
+      await tester.pumpAndSettle();
+      expect(find.text('1'), findsOneWidget);
+    });
   });
 }
 

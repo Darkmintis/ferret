@@ -263,6 +263,8 @@ class Ferret {
   static void _tearDown() {
     hideOverlay();
     _inspectorOpen.value = false;
+    FerretBubble.clearPersistedPositionForTest();
+    FerretBubble.clearUserHiddenForTest();
     FerretDartIoOverride.uninstall();
     _dioInterceptor = null;
     _engine = null;
