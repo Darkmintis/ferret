@@ -272,9 +272,47 @@ void main() {
         ),
       );
       expect(find.text('2'), findsOneWidget);
-      await tester.tap(find.text('2'));
+      // Tiny pan below tap-slop (pan-only gesture — no competing onTap).
+      await tester.timedDrag(
+        find.text('2'),
+        const Offset(2, 0),
+        const Duration(milliseconds: 50),
+      );
       expect(opened, isTrue);
     });
+
+    testWidgets('drag snaps to nearer horizontal edge', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final store = FerretStore(maxEntries: 10)..add(completedEntry('1'));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                FerretBubble(
+                  store: store,
+                  showReleaseTag: false,
+                  onOpen: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final button = find.text('1');
+      final before = tester.getCenter(button);
+      await tester.drag(button, const Offset(-200, -80));
+      await tester.pumpAndSettle();
+
+      final after = tester.getCenter(button);
+      expect(after.dx, lessThan(before.dx - 50));
+      expect(after.dx, closeTo(8 + 24, 1)); // edgeMargin + half size
+    });
+
   });
 }
 

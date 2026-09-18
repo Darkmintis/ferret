@@ -27,6 +27,7 @@ class FerretBubble extends StatefulWidget {
 class _FerretBubbleState extends State<FerretBubble> {
   late final FerretBubbleFlash _flash;
   Offset? _offset;
+  double _dragDistance = 0;
 
   @override
   void initState() {
@@ -53,6 +54,30 @@ class _FerretBubbleState extends State<FerretBubble> {
       if (mounted) setState(() {});
     });
     if (mounted) setState(() {});
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    _dragDistance = 0;
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    final media = MediaQuery.of(context);
+    final current =
+        _offset ?? FerretBubbleLayout.defaultOffset(media.size);
+    _dragDistance += details.delta.distance;
+    setState(() => _offset = current + details.delta);
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    if (!mounted) return;
+    if (_dragDistance < FerretBubbleLayout.dragTapSlop) {
+      widget.onOpen();
+      return;
+    }
+    final media = MediaQuery.of(context);
+    final current =
+        _offset ?? FerretBubbleLayout.defaultOffset(media.size);
+    setState(() => _offset = FerretBubbleLayout.snapToEdge(current, media));
   }
 
   @override
@@ -85,10 +110,9 @@ class _FerretBubbleState extends State<FerretBubble> {
               count: widget.store.length,
               background: background,
               foreground: foreground,
-              onTap: widget.onOpen,
-              onPanUpdate: (details) {
-                setState(() => _offset = offset + details.delta);
-              },
+              onPanStart: _onPanStart,
+              onPanUpdate: _onPanUpdate,
+              onPanEnd: _onPanEnd,
             ),
           ],
         );

@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 
 /// Draggable count button content for [FerretBubble].
+///
+/// Pan-only gestures (no competing [GestureDetector.onTap]) so drag starts
+/// immediately — same model as Sway's floating button.
 class FerretBubbleButton extends StatelessWidget {
   const FerretBubbleButton({
     super.key,
     required this.count,
     required this.background,
     required this.foreground,
-    required this.onTap,
+    required this.onPanStart,
     required this.onPanUpdate,
+    required this.onPanEnd,
   });
 
   final int count;
   final Color background;
   final Color foreground;
-  final VoidCallback onTap;
-  final ValueChanged<DragUpdateDetails> onPanUpdate;
+  final GestureDragStartCallback onPanStart;
+  final GestureDragUpdateCallback onPanUpdate;
+  final GestureDragEndCallback onPanEnd;
 
-  static const size = 52.0;
-  static const radius = 14.0;
+  static const size = 48.0;
+  static const radius = 12.0;
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +38,9 @@ class FerretBubbleButton extends StatelessWidget {
         height: size,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
+          onPanStart: onPanStart,
           onPanUpdate: onPanUpdate,
-          onTap: onTap,
+          onPanEnd: onPanEnd,
           child: ColoredBox(
             color: background,
             child: Center(
