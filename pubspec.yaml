@@ -2,7 +2,7 @@ name: ferret
 description: >-
   Modern HTTP inspector for Flutter — zero setup, production-safe, raw visibility.
   See everything. Ship nothing you didn't mean to.
-version: 0.1.0
+version: 0.1.1
 license: MIT
 homepage: https://github.com/darkmintis/ferret
 repository: https://github.com/darkmintis/ferret
