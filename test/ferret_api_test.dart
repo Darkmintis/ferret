@@ -83,6 +83,34 @@ void main() {
       );
       expect(find.text('home'), findsOneWidget);
     });
+
+    test('install with shared navigatorKey exposes it via Ferret.navigatorKey',
+        () {
+      final shared = GlobalKey<NavigatorState>();
+      Ferret.install(config: FerretConfig(navigatorKey: shared));
+      expect(identical(Ferret.navigatorKey, shared), isTrue);
+    });
+
+    testWidgets('openDashboard uses injected navigatorKey', (tester) async {
+      final shared = GlobalKey<NavigatorState>();
+      Ferret.install(config: FerretConfig(navigatorKey: shared));
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: shared,
+          home: const Scaffold(body: Text('home')),
+        ),
+      );
+      expect(Ferret.isInspectorOpen, isFalse);
+      // openDashboard awaits until the route is popped — don't await it.
+      final opened = Ferret.openDashboard();
+      await tester.pumpAndSettle();
+      expect(Ferret.isInspectorOpen, isTrue);
+      expect(find.text('Ferret'), findsOneWidget);
+      Navigator.of(shared.currentContext!).pop();
+      await opened;
+      await tester.pumpAndSettle();
+      expect(Ferret.isInspectorOpen, isFalse);
+    });
   });
 }
 

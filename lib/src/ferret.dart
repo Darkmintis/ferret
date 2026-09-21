@@ -44,8 +44,15 @@ class Ferret {
   static OverlayEntry? _overlayEntry;
   static bool _installed = false;
   static final ValueNotifier<bool> _inspectorOpen = ValueNotifier<bool>(false);
-  static final GlobalKey<NavigatorState> navigatorKey =
+  static final GlobalKey<NavigatorState> _defaultNavigatorKey =
       GlobalKey<NavigatorState>();
+
+  /// Attach to [MaterialApp.navigatorKey] or [GoRouter.navigatorKey].
+  ///
+  /// When [FerretConfig.navigatorKey] is set at [install], that key is returned
+  /// so Ferret uses your app's navigator (typical with GoRouter).
+  static GlobalKey<NavigatorState> get navigatorKey =>
+      _config.navigatorKey ?? _defaultNavigatorKey;
 
   /// Whether the Ferret inspector screen is currently open.
   static bool get isInspectorOpen => _inspectorOpen.value;
@@ -142,6 +149,9 @@ class Ferret {
   }
 
   /// Opens the dashboard as a full-screen route.
+  ///
+  /// Resolution order: injected [FerretConfig.navigatorKey], then the default
+  /// [navigatorKey], then [Navigator.maybeOf] from [context] when provided.
   static Future<void> openDashboard([BuildContext? context]) async {
     if (!_activation.active || _store == null) return;
     if (_inspectorOpen.value) return;
@@ -155,7 +165,9 @@ class Ferret {
     if (nav == null) {
       debugPrint(
         'Ferret: no Navigator found. '
-        'Set MaterialApp(navigatorKey: Ferret.navigatorKey, builder: Ferret.builder).',
+        'Set MaterialApp(navigatorKey: Ferret.navigatorKey, builder: Ferret.builder), '
+        'or for MaterialApp.router pass the same GlobalKey to GoRouter and '
+        'FerretConfig(navigatorKey: …).',
       );
       return;
     }
@@ -202,7 +214,7 @@ class Ferret {
           store: _store!,
           showReleaseTag: _activation.showReleaseWarning,
           onOpen: () {
-            unawaited(openDashboard());
+            unawaited(openDashboard(context));
           },
         );
       },
@@ -238,6 +250,23 @@ class Ferret {
   }
 
   /// Attach Ferret to [MaterialApp.builder] / [CupertinoApp.builder].
+  ///
+  /// Also set [navigatorKey] so the floating button can open the inspector:
+  ///
+  /// ```dart
+  /// MaterialApp(
+  ///   navigatorKey: Ferret.navigatorKey,
+  ///   builder: Ferret.builder,
+  ///   home: HomePage(),
+  /// )
+  /// ```
+  ///
+  /// With [MaterialApp.router] / GoRouter:
+  ///
+  /// ```dart
+  /// GoRouter(navigatorKey: Ferret.navigatorKey, …);
+  /// // or Ferret.install(config: FerretConfig(navigatorKey: yourKey));
+  /// ```
   static Widget builder(BuildContext context, Widget? child) {
     if (!_activation.active || _store == null) {
       return child ?? const SizedBox.shrink();

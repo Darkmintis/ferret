@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'http_client_type.dart';
 
 /// Configuration for [Ferret.install].
@@ -29,6 +31,12 @@ class FerretConfig {
   /// Requests slower than this are flagged as slow.
   final Duration slowThreshold;
 
+  /// Optional navigator key for [MaterialApp.router] / GoRouter.
+  ///
+  /// Pass your app's existing key (the same one given to GoRouter). When null,
+  /// Ferret uses its built-in [Ferret.navigatorKey].
+  final GlobalKey<NavigatorState>? navigatorKey;
+
   const FerretConfig({
     this.enabled = true,
     this.enableInRelease = false,
@@ -40,6 +48,7 @@ class FerretConfig {
       HttpClientType.dartIo,
     },
     this.slowThreshold = const Duration(seconds: 2),
+    this.navigatorKey,
   }) : assert(maxEntries > 0, 'maxEntries must be > 0');
 
   FerretConfig copyWith({
@@ -49,6 +58,7 @@ class FerretConfig {
     bool? captureBody,
     Set<HttpClientType>? clients,
     Duration? slowThreshold,
+    GlobalKey<NavigatorState>? navigatorKey,
   }) {
     return FerretConfig(
       enabled: enabled ?? this.enabled,
@@ -57,6 +67,7 @@ class FerretConfig {
       captureBody: captureBody ?? this.captureBody,
       clients: clients ?? this.clients,
       slowThreshold: slowThreshold ?? this.slowThreshold,
+      navigatorKey: navigatorKey ?? this.navigatorKey,
     );
   }
 
@@ -68,7 +79,8 @@ class FerretConfig {
         'maxEntries: $maxEntries, '
         'captureBody: $captureBody, '
         'clients: $clients, '
-        'slowThreshold: $slowThreshold'
+        'slowThreshold: $slowThreshold, '
+        'navigatorKey: ${navigatorKey != null}'
         ')';
   }
 }
