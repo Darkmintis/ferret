@@ -84,12 +84,14 @@ void main() {
       expect(find.text('home'), findsOneWidget);
     });
 
-    test('install with shared navigatorKey exposes it via Ferret.navigatorKey',
-        () {
-      final shared = GlobalKey<NavigatorState>();
-      Ferret.install(config: FerretConfig(navigatorKey: shared));
-      expect(identical(Ferret.navigatorKey, shared), isTrue);
-    });
+    test(
+      'install with shared navigatorKey exposes it via Ferret.navigatorKey',
+      () {
+        final shared = GlobalKey<NavigatorState>();
+        Ferret.install(config: FerretConfig(navigatorKey: shared));
+        expect(identical(Ferret.navigatorKey, shared), isTrue);
+      },
+    );
 
     testWidgets('openDashboard uses injected navigatorKey', (tester) async {
       final shared = GlobalKey<NavigatorState>();

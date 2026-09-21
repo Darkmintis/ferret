@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:ferret/ferret.dart';
@@ -322,18 +323,14 @@ void main() {
       final store = FerretStore(maxEntries: 10)..add(completedEntry('1'));
 
       Widget bubble() => MaterialApp(
-            home: Scaffold(
-              body: Stack(
-                children: [
-                  FerretBubble(
-                    store: store,
-                    showReleaseTag: false,
-                    onOpen: () {},
-                  ),
-                ],
-              ),
-            ),
-          );
+        home: Scaffold(
+          body: Stack(
+            children: [
+              FerretBubble(store: store, showReleaseTag: false, onOpen: () {}),
+            ],
+          ),
+        ),
+      );
 
       await tester.pumpWidget(bubble());
       await tester.drag(find.text('1'), const Offset(-200, -80));
@@ -371,14 +368,16 @@ void main() {
       );
       expect(find.text('1'), findsOneWidget);
 
-      final gesture = await tester.startGesture(tester.getCenter(find.text('1')));
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('1')),
+      );
       await tester.pump(const Duration(milliseconds: 500));
       await gesture.up();
       await tester.pumpAndSettle();
       expect(find.text('1'), findsNothing);
 
       // Hot reload restores via reassemble.
-      tester.binding.reassembleApplication();
+      unawaited(tester.binding.reassembleApplication());
       await tester.pumpAndSettle();
       expect(find.text('1'), findsOneWidget);
     });

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/ferret_store.dart';
@@ -34,13 +33,11 @@ class FerretBubble extends StatefulWidget {
   final VoidCallback onOpen;
 
   /// Clears remembered bubble position (tests / [Ferret.resetForTest]).
-  @visibleForTesting
   static void clearPersistedPositionForTest() {
     _persistedBubblePosition = null;
   }
 
   /// Clears long-press hide (tests / [Ferret.resetForTest]).
-  @visibleForTesting
   static void clearUserHiddenForTest() {
     _userHidden = false;
   }
@@ -121,8 +118,7 @@ class _FerretBubbleState extends State<FerretBubble> {
 
   void _onPanUpdate(DragUpdateDetails details) {
     final media = MediaQuery.of(context);
-    final current =
-        _offset ?? FerretBubbleLayout.defaultOffset(media.size);
+    final current = _offset ?? FerretBubbleLayout.defaultOffset(media.size);
     _dragDistance += details.delta.distance;
     if (_dragDistance >= FerretBubbleLayout.dragTapSlop) {
       _longPressTimer?.cancel();
@@ -140,8 +136,7 @@ class _FerretBubbleState extends State<FerretBubble> {
       return;
     }
     final media = MediaQuery.of(context);
-    final current =
-        _offset ?? FerretBubbleLayout.defaultOffset(media.size);
+    final current = _offset ?? FerretBubbleLayout.defaultOffset(media.size);
     setState(() {
       _offset = FerretBubbleLayout.snapToEdge(current, media);
       _persistPosition();

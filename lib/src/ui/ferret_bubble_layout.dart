@@ -23,10 +23,7 @@ abstract final class FerretBubbleLayout {
       ),
       offset.dy.clamp(
         media.padding.top + edgeMargin,
-        media.size.height -
-            FerretBubbleButton.size -
-            media.padding.bottom -
-            24,
+        media.size.height - FerretBubbleButton.size - media.padding.bottom - 24,
       ),
     );
   }
