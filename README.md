@@ -60,6 +60,43 @@ class MyApp extends StatelessWidget {
 }
 ```
 
+### MaterialApp.router / GoRouter
+
+Wire Ferret's key to the router (same idea as `MaterialApp.navigatorKey`):
+
+```dart
+void main() {
+  Ferret.install();
+  runApp(const MyApp());
+}
+
+final _router = GoRouter(
+  navigatorKey: Ferret.navigatorKey,
+  routes: [
+    GoRoute(path: '/', builder: (_, __) => const HomePage()),
+  ],
+);
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      routerConfig: _router,
+      builder: Ferret.builder,
+    );
+  }
+}
+```
+
+If your app already owns a `GlobalKey<NavigatorState>`, pass it in:
+
+```dart
+Ferret.install(config: FerretConfig(navigatorKey: yourNavKey));
+// GoRouter(navigatorKey: yourNavKey, …)
+```
+
 ### Capture traffic
 
 ```dart
@@ -98,6 +135,7 @@ Ferret.install(
       HttpClientType.dartIo,
     },
     slowThreshold: Duration(seconds: 2),
+    // navigatorKey: yourNavKey, // only if GoRouter / app already owns a key
   ),
 );
 ```
@@ -114,9 +152,10 @@ When disabled, Ferret does not intercept, store, or render anything.
 
 ### Floating bubble
 
-- Circular count button, default position **center-right** (drag to move).
+- Count button (48×48), default **center-right** — drag to move, snaps to the nearer edge.
+- Remembers position after you close the inspector.
 - Flashes **red** briefly when a new failed call arrives.
-- **Tap** opens the full inspector.
+- **Tap** opens the inspector; **long-press** hides until hot reload / hot restart.
 - Hidden while the inspector is open.
 
 ## Features

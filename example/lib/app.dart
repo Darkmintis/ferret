@@ -32,6 +32,7 @@ class _FerretExampleAppState extends State<FerretExampleApp> {
     return MaterialApp(
       title: 'Ferret Demo',
       debugShowCheckedModeBanner: false,
+      // Required so the floating bubble can push the inspector.
       navigatorKey: Ferret.navigatorKey,
       builder: Ferret.builder,
       theme: AppTheme.light(),
