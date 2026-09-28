@@ -10,9 +10,11 @@ class FerretEntry {
     required this.requestHeaders,
     required this.startTime,
     this.requestBody,
+    this.requestBodyOriginalSize,
     this.statusCode,
     this.responseHeaders,
     this.responseBody,
+    this.responseBodyOriginalSize,
     this.endTime,
     this.sizeBytes,
     this.error,
@@ -24,16 +26,28 @@ class FerretEntry {
   final Uri url;
   final Map<String, String> requestHeaders;
   final Object? requestBody;
+
+  /// Full request body size in bytes when [requestBody] was truncated by
+  /// `FerretConfig.maxBodyBytes`; `null` when the body is complete.
+  final int? requestBodyOriginalSize;
   final DateTime startTime;
 
   final int? statusCode;
   final Map<String, String>? responseHeaders;
   final Object? responseBody;
+
+  /// Full response body size in bytes when [responseBody] was truncated by
+  /// `FerretConfig.maxBodyBytes`; `null` when the body is complete.
+  final int? responseBodyOriginalSize;
   final DateTime? endTime;
   final int? sizeBytes;
   final String? error;
 
   Duration? get duration => endTime?.difference(startTime);
+
+  bool get requestBodyTruncated => requestBodyOriginalSize != null;
+
+  bool get responseBodyTruncated => responseBodyOriginalSize != null;
 
   bool get isFailed =>
       error != null || (statusCode != null && statusCode! >= 400);
@@ -54,10 +68,12 @@ class FerretEntry {
     Uri? url,
     Map<String, String>? requestHeaders,
     Object? requestBody,
+    int? requestBodyOriginalSize,
     DateTime? startTime,
     int? statusCode,
     Map<String, String>? responseHeaders,
     Object? responseBody,
+    int? responseBodyOriginalSize,
     DateTime? endTime,
     int? sizeBytes,
     String? error,
@@ -70,10 +86,14 @@ class FerretEntry {
       url: url ?? this.url,
       requestHeaders: requestHeaders ?? this.requestHeaders,
       requestBody: requestBody ?? this.requestBody,
+      requestBodyOriginalSize:
+          requestBodyOriginalSize ?? this.requestBodyOriginalSize,
       startTime: startTime ?? this.startTime,
       statusCode: statusCode ?? this.statusCode,
       responseHeaders: responseHeaders ?? this.responseHeaders,
       responseBody: responseBody ?? this.responseBody,
+      responseBodyOriginalSize:
+          responseBodyOriginalSize ?? this.responseBodyOriginalSize,
       endTime: endTime ?? this.endTime,
       sizeBytes: sizeBytes ?? this.sizeBytes,
       error: clearError ? null : (error ?? this.error),

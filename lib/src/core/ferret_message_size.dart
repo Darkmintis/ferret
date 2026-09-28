@@ -3,7 +3,17 @@ import 'dart:convert';
 /// Byte-size helpers for request/response sections in the inspector UI.
 abstract final class FerretMessageSize {
   static int bytes({required Map<String, String> headers, Object? body}) {
-    return _headersBytes(headers) + _bodyBytes(body);
+    return _headersBytes(headers) + bodyBytes(body);
+  }
+
+  /// Headers plus the full body size: [originalBodySize] when the stored
+  /// [body] was truncated, otherwise the size of [body] itself.
+  static int messageBytes({
+    required Map<String, String> headers,
+    Object? body,
+    int? originalBodySize,
+  }) {
+    return _headersBytes(headers) + (originalBodySize ?? bodyBytes(body));
   }
 
   static String? header(Map<String, String> headers, String name) {
@@ -32,7 +42,8 @@ abstract final class FerretMessageSize {
     return total;
   }
 
-  static int _bodyBytes(Object? body) {
+  /// UTF-8 size of a captured body (JSON-encoded for maps / lists).
+  static int bodyBytes(Object? body) {
     if (body == null) return 0;
     if (body is List<int>) return body.length;
     if (body is String) return utf8.encode(body).length;

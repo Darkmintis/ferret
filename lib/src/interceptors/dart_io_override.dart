@@ -274,7 +274,7 @@ class _FerretIoHttpClientRequest implements HttpClientRequest {
       } on Object {
         requestBody = raw;
       }
-      _engine.store.update(id, (e) => e.copyWith(requestBody: requestBody));
+      _engine.setRequestBody(id, requestBody);
     }
 
     try {
