@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import 'http_client_type.dart';
@@ -25,6 +27,11 @@ class FerretConfig {
   /// Capture request/response bodies.
   final bool captureBody;
 
+  /// Largest body kept per request/response, in bytes. Longer bodies are cut
+  /// to this size and marked as truncated; sizes still report the full length.
+  /// `null` keeps whole bodies (watch memory with large JSON or images).
+  final int? maxBodyBytes;
+
   /// Which client stacks to intercept.
   final Set<HttpClientType> clients;
 
@@ -37,11 +44,17 @@ class FerretConfig {
   /// Ferret uses its built-in [Ferret.navigatorKey].
   final GlobalKey<NavigatorState>? navigatorKey;
 
+  /// Opens a link tapped in the inspector, e.g. with `url_launcher`:
+  /// `onOpenUrl: (uri) => launchUrl(uri)`. When null, the link sheet offers
+  /// Copy and Preview only, so Ferret adds no launcher dependency.
+  final FutureOr<void> Function(Uri url)? onOpenUrl;
+
   const FerretConfig({
     this.enabled = true,
     this.enableInRelease = false,
     this.maxEntries = 500,
     this.captureBody = true,
+    this.maxBodyBytes = defaultMaxBodyBytes,
     this.clients = const {
       HttpClientType.dio,
       HttpClientType.http,
@@ -49,25 +62,37 @@ class FerretConfig {
     },
     this.slowThreshold = const Duration(seconds: 2),
     this.navigatorKey,
-  }) : assert(maxEntries > 0, 'maxEntries must be > 0');
+    this.onOpenUrl,
+  }) : assert(maxEntries > 0, 'maxEntries must be > 0'),
+       assert(
+         maxBodyBytes == null || maxBodyBytes > 0,
+         'maxBodyBytes must be > 0 or null',
+       );
+
+  /// Default [maxBodyBytes]: 256 KB.
+  static const int defaultMaxBodyBytes = 256 * 1024;
 
   FerretConfig copyWith({
     bool? enabled,
     bool? enableInRelease,
     int? maxEntries,
     bool? captureBody,
+    int? maxBodyBytes,
     Set<HttpClientType>? clients,
     Duration? slowThreshold,
     GlobalKey<NavigatorState>? navigatorKey,
+    FutureOr<void> Function(Uri url)? onOpenUrl,
   }) {
     return FerretConfig(
       enabled: enabled ?? this.enabled,
       enableInRelease: enableInRelease ?? this.enableInRelease,
       maxEntries: maxEntries ?? this.maxEntries,
       captureBody: captureBody ?? this.captureBody,
+      maxBodyBytes: maxBodyBytes ?? this.maxBodyBytes,
       clients: clients ?? this.clients,
       slowThreshold: slowThreshold ?? this.slowThreshold,
       navigatorKey: navigatorKey ?? this.navigatorKey,
+      onOpenUrl: onOpenUrl ?? this.onOpenUrl,
     );
   }
 
@@ -78,9 +103,11 @@ class FerretConfig {
         'enableInRelease: $enableInRelease, '
         'maxEntries: $maxEntries, '
         'captureBody: $captureBody, '
+        'maxBodyBytes: $maxBodyBytes, '
         'clients: $clients, '
         'slowThreshold: $slowThreshold, '
-        'navigatorKey: ${navigatorKey != null}'
+        'navigatorKey: ${navigatorKey != null}, '
+        'onOpenUrl: ${onOpenUrl != null}'
         ')';
   }
 }
