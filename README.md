@@ -28,7 +28,7 @@ Ferret is different:
 
 ```yaml
 dependencies:
-  ferret: ^0.1.1
+  ferret: ^0.2.0
 ```
 
 ```bash
@@ -111,6 +111,10 @@ final client = Ferret.wrapClient(http.Client());
 // dart:io HttpClient — captured automatically after install (mobile/desktop)
 ```
 
+`Ferret.dioInterceptor` and `Ferret.wrapClient()` are order-independent: you
+can create your Dio / http client before `Ferret.install()` (for example in a
+DI container) and calls are captured once Ferret is installed and active.
+
 ### Platform support
 
 | Platform | Dio | package:http | dart:io |
@@ -129,6 +133,7 @@ Ferret.install(
     enableInRelease: false,     // set true only when you intentionally need release
     maxEntries: 500,            // ring buffer size
     captureBody: true,
+    maxBodyBytes: 256 * 1024,   // per body; null = unlimited
     clients: {
       HttpClientType.dio,
       HttpClientType.http,
@@ -136,9 +141,38 @@ Ferret.install(
     },
     slowThreshold: Duration(seconds: 2),
     // navigatorKey: yourNavKey, // only if GoRouter / app already owns a key
+    // onOpenUrl: (url) => launchUrl(url), // enables "Open" in the link sheet
   ),
 );
 ```
+
+Bodies larger than `maxBodyBytes` are cut at a character boundary; the
+inspector shows a "Truncated" notice and sizes still report the full body.
+
+### Links and image previews
+
+URLs in headers and bodies are tappable. Tapping one opens a sheet with icon
+buttons: copy, preview (eye, image URLs only) and open (only when `onOpenUrl`
+is set). A **Links** tab lists every unique URL in a call, grouped by where it
+appeared. `image/*` response bodies render as images.
+
+Headers and body cards have a chevron to collapse long sections.
+
+Ferret has no `url_launcher` dependency; wire it yourself:
+
+```dart
+import 'package:url_launcher/url_launcher.dart';
+
+FerretConfig(
+  onOpenUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
+)
+```
+
+> **Security note:** image previews make a real network request from the
+> device, but only when you tap the preview (eye) icon. The request does **not** send
+> the original call's auth headers, so authenticated images may fail (the
+> HTTP status is shown). With `enableInRelease: true` this also applies to
+> release builds: only enable it for builds you trust.
 
 ### Debug and release behavior
 
@@ -162,7 +196,9 @@ When disabled, Ferret does not intercept, store, or render anything.
 
 - Floating count button → full inspector
 - Call list with method, path, host, status, duration, size
-- Detail tabs: Overview · Request · Response · Error
+- Detail tabs: Overview · Request · Response · Links · Error
+- Tappable URLs, link sheet, tap-to-load image previews
+- Body size cap (`maxBodyBytes`) to bound memory
 - Search & filters (method, failed, slow)
 - Copy as cURL (per call)
 - Share / copy session as HAR

@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0]
+
+### Added
+
+- `FerretConfig.maxBodyBytes` (default 256 KB, `null` = unlimited) caps each
+  captured request/response body. Truncation is UTF-8 safe, the inspector
+  shows a "Truncated" notice, and sizes / HAR still report the full size.
+- Tappable URLs in headers and bodies, with a link sheet of icon buttons
+  (copy / preview / open).
+- Collapsible Headers and Body cards (chevron or tap the title).
+- `FerretConfig.onOpenUrl` callback powers "Open" (no `url_launcher`
+  dependency).
+- **Links** tab listing unique URLs per call, grouped by source.
+- Tap-to-load image previews that show the HTTP status on failure;
+  `image/*` response bodies render as images instead of raw bytes.
+
+### Fixed
+
+- `Ferret.dioInterceptor` and `Ferret.wrapClient()` read before
+  `Ferret.install()` no longer silently capture nothing; both resolve the
+  engine per request.
+- Streamed `dart:io` request bodies now respect `captureBody` /
+  `maxBodyBytes`.
+
+### Changed
+
+- Wider dependency ranges: `share_plus: ">=11.0.0 <14.0.0"` (lets apps on
+  `win32` 5, e.g. `file_picker` / `flutter_secure_storage` 9, resolve
+  without overrides) and `dio: ^5.4.0`.
+- Detail view tabs are scrollable to fit the new Links tab.
+
 ## [0.1.1]
 
 ### Added
