@@ -15,8 +15,7 @@ class FerretExampleApp extends StatefulWidget {
 }
 
 class _FerretExampleAppState extends State<FerretExampleApp> {
-  late final FeedRepository _repository =
-      widget.repository ?? FeedRepository();
+  late final FeedRepository _repository = widget.repository ?? FeedRepository();
   late final bool _ownsRepository = widget.repository == null;
 
   @override

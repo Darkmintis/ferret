@@ -10,15 +10,16 @@ class FeedRepository {
     Dio? dio,
     http.Client? httpClient,
     this.baseUrl = 'https://jsonplaceholder.typicode.com',
-  })  : _dio = dio ??
-            Ferret.createDio(
-              BaseOptions(
-                baseUrl: baseUrl,
-                connectTimeout: const Duration(seconds: 12),
-                receiveTimeout: const Duration(seconds: 12),
-              ),
-            ),
-        _http = httpClient ?? Ferret.wrapClient(http.Client());
+  }) : _dio =
+           dio ??
+           Ferret.createDio(
+             BaseOptions(
+               baseUrl: baseUrl,
+               connectTimeout: const Duration(seconds: 12),
+               receiveTimeout: const Duration(seconds: 12),
+             ),
+           ),
+       _http = httpClient ?? Ferret.wrapClient(http.Client());
 
   final String baseUrl;
   final Dio _dio;
@@ -54,6 +55,29 @@ class FeedRepository {
   /// Use case: package:http client (still captured by Ferret).
   Future<void> httpGet() async {
     await _http.get(Uri.parse('$baseUrl/todos/1'));
+  }
+
+  /// Use case: images → body preview, tappable image links, Links tab.
+  ///
+  /// The GET returns `image/jpeg` bytes (rendered inline). The POST echoes a
+  /// JSON body with image URLs: one loads, one 404s (preview shows the HTTP
+  /// status), one is SVG (preview unsupported).
+  Future<void> loadImages() async {
+    await _dio.get<List<int>>(
+      'https://picsum.photos/id/237/300/200.jpg',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    await _dio.post<dynamic>(
+      '/posts',
+      data: {
+        'title': 'gallery',
+        'cover': 'https://picsum.photos/id/1025/600/400.jpg',
+        'thumbnail': 'https://picsum.photos/id/does-not-exist/200.jpg',
+        'logo':
+            'https://upload.wikimedia.org/wikipedia/commons/0/02/SVG_logo.svg',
+        'docs': 'https://pub.dev/packages/ferret',
+      },
+    );
   }
 
   /// Use case: failed call → Error tab in Ferret.

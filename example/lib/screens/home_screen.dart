@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/post.dart';
 import '../services/feed_repository.dart';
 
-/// Four buttons = four Ferret use cases (success GET, POST, http, error).
+/// Each button = one Ferret use case (GET, POST, http, error, images).
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.repository});
 
@@ -90,10 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: 'Dio POST',
                   color: const Color(0xFF1565C0),
                   enabled: !_busy,
-                  onPressed: () => _run(
-                    'Create post',
-                    widget.repository.createPost,
-                  ),
+                  onPressed: () =>
+                      _run('Create post', widget.repository.createPost),
                 ),
               ),
             ],
@@ -107,10 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: 'package:http',
                   color: const Color(0xFF6A1B9A),
                   enabled: !_busy,
-                  onPressed: () => _run(
-                    'http GET',
-                    widget.repository.httpGet,
-                  ),
+                  onPressed: () => _run('http GET', widget.repository.httpGet),
                 ),
               ),
               const SizedBox(width: 8),
@@ -120,19 +115,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: '404',
                   color: const Color(0xFFC62828),
                   enabled: !_busy,
-                  onPressed: () => _run(
-                    'Trigger error',
-                    widget.repository.triggerError,
-                  ),
+                  onPressed: () =>
+                      _run('Trigger error', widget.repository.triggerError),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            _status,
-            style: Theme.of(context).textTheme.bodySmall,
+          const SizedBox(height: 8),
+          _UseCaseButton(
+            label: 'Load images',
+            subtitle: 'image bytes + image links (preview, Links tab)',
+            color: const Color(0xFFE65100),
+            enabled: !_busy,
+            onPressed: () => _run('Load images', widget.repository.loadImages),
           ),
+          const SizedBox(height: 12),
+          Text(_status, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 20),
           Text('Posts', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -140,8 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               'Tap “Load posts” to fill this list.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             )
           else
             for (final post in _posts) ...[
