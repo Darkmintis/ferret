@@ -36,7 +36,9 @@ class Ferret {
   static FerretConfig _config = const FerretConfig();
   static FerretStore? _store;
   static FerretEngine? _engine;
-  static FerretDioInterceptor? _dioInterceptor;
+  static final FerretDioInterceptor _dioInterceptor = FerretDioInterceptor.lazy(
+    () => _engine,
+  );
   static FerretActivation _activation = const FerretActivation(
     active: false,
     showReleaseWarning: false,
@@ -72,13 +74,10 @@ class Ferret {
   /// Dio interceptor — add to existing Dio instances:
   /// `dio.interceptors.add(Ferret.dioInterceptor)`.
   ///
-  /// Returns a no-op interceptor when Ferret is inactive.
-  static Interceptor get dioInterceptor {
-    if (!_activation.active || _dioInterceptor == null) {
-      return const _NoopInterceptor();
-    }
-    return _dioInterceptor!;
-  }
+  /// Always the same instance, and safe to read before [install]: it looks up
+  /// the active capture engine on every request and passes traffic through
+  /// untouched while Ferret is inactive.
+  static Interceptor get dioInterceptor => _dioInterceptor;
 
   /// One-line install. Safe to call before [runApp].
   ///
@@ -98,7 +97,6 @@ class Ferret {
 
     _store = FerretStore(maxEntries: config.maxEntries);
     _engine = FerretEngine(store: _store!, config: config);
-    _dioInterceptor = FerretDioInterceptor(_engine!);
 
     if (config.clients.contains(HttpClientType.dartIo) && !kIsWeb) {
       FerretDartIoOverride.install(_engine!);
@@ -118,14 +116,14 @@ class Ferret {
     return dio;
   }
 
-  /// Wraps a `package:http` client. Returns [client] unchanged when inactive.
+  /// Wraps a `package:http` client.
+  ///
+  /// Safe to call before [install]: the wrapper looks up the active capture
+  /// engine on every request. Once Ferret is installed and inactive (for
+  /// example a release build), [client] is returned unchanged.
   static http.Client wrapClient(http.Client client) {
-    if (!_activation.active ||
-        _engine == null ||
-        !_config.clients.contains(HttpClientType.http)) {
-      return client;
-    }
-    return FerretHttpClient(client, _engine!);
+    if (_installed && !_activation.active) return client;
+    return FerretHttpClient.lazy(client, () => _engine);
   }
 
   /// Inserts the floating bubble overlay.
@@ -295,7 +293,6 @@ class Ferret {
     FerretBubble.clearPersistedPositionForTest();
     FerretBubble.clearUserHiddenForTest();
     FerretDartIoOverride.uninstall();
-    _dioInterceptor = null;
     _engine = null;
     _store?.dispose();
     _store = null;
@@ -304,8 +301,4 @@ class Ferret {
 
   /// Whether [install] has been called in this isolate.
   static bool get isInstalled => _installed;
-}
-
-class _NoopInterceptor extends Interceptor {
-  const _NoopInterceptor();
 }

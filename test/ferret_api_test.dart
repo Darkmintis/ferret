@@ -45,6 +45,29 @@ void main() {
       expect(Ferret.store!.entries.single.client, HttpClientType.http);
     });
 
+    test('dioInterceptor read before install still captures', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _OkAdapter()
+        ..interceptors.add(Ferret.dioInterceptor);
+      await dio.get<dynamic>('https://example.com/before');
+
+      Ferret.install(config: const FerretConfig(clients: {HttpClientType.dio}));
+      await dio.get<dynamic>('https://example.com/after');
+
+      expect(Ferret.store!.length, 1);
+      expect(Ferret.store!.entries.single.url.path, '/after');
+      expect(identical(Ferret.dioInterceptor, Ferret.dioInterceptor), isTrue);
+    });
+
+    test('wrapClient before install still captures', () async {
+      final client = Ferret.wrapClient(_FakeHttpClient());
+      Ferret.install(
+        config: const FerretConfig(clients: {HttpClientType.http}),
+      );
+      await client.get(Uri.parse('https://example.com'));
+      expect(Ferret.store!.length, 1);
+    });
+
     test('wrapClient is passthrough when inactive', () {
       Ferret.install(config: const FerretConfig(enabled: false));
       final inner = _FakeHttpClient();

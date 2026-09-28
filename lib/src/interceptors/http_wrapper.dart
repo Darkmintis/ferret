@@ -9,14 +9,21 @@ import '../core/ferret_engine.dart';
 
 /// Wraps a [`package:http`] [http.Client] and records traffic.
 class FerretHttpClient extends http.BaseClient {
-  FerretHttpClient(this._inner, this._engine);
+  /// Records into a fixed [engine].
+  FerretHttpClient(this._inner, FerretEngine engine)
+    : _resolve = (() => engine);
+
+  /// Resolves the engine per request, so the client can be wrapped before
+  /// `Ferret.install()` and passes traffic through while inactive.
+  FerretHttpClient.lazy(this._inner, this._resolve);
 
   final http.Client _inner;
-  final FerretEngine _engine;
+  final FerretEngine? Function() _resolve;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (!_engine.accepts(HttpClientType.http)) {
+    final engine = _resolve();
+    if (engine == null || !engine.accepts(HttpClientType.http)) {
       return _inner.send(request);
     }
 
@@ -33,7 +40,7 @@ class FerretHttpClient extends http.BaseClient {
       };
     }
 
-    final entry = _engine.begin(
+    final entry = engine.begin(
       client: HttpClientType.http,
       method: request.method,
       url: request.url,
@@ -54,7 +61,7 @@ class FerretHttpClient extends http.BaseClient {
         body = bytes;
       }
 
-      _engine.complete(
+      engine.complete(
         id: entry.id,
         statusCode: response.statusCode,
         responseHeaders: response.headers,
@@ -72,7 +79,7 @@ class FerretHttpClient extends http.BaseClient {
         reasonPhrase: response.reasonPhrase,
       );
     } on Object catch (error, stackTrace) {
-      _engine.fail(entry.id, error, stackTrace);
+      engine.fail(entry.id, error, stackTrace);
       rethrow;
     }
   }

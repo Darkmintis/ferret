@@ -8,23 +8,29 @@ import '../core/ferret_engine.dart';
 
 /// Dio interceptor that records requests into [FerretEngine].
 class FerretDioInterceptor extends Interceptor {
-  FerretDioInterceptor(this._engine);
+  /// Records into a fixed [engine].
+  FerretDioInterceptor(FerretEngine engine) : _resolve = (() => engine);
 
-  final FerretEngine _engine;
+  /// Resolves the engine per request, so the interceptor can be attached
+  /// before `Ferret.install()` and passes traffic through while inactive.
+  FerretDioInterceptor.lazy(this._resolve);
+
+  final FerretEngine? Function() _resolve;
 
   static const _entryIdExtra = 'ferret_entry_id';
   static const _scopeExtra = 'ferret_scope_pushed';
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (!_engine.accepts(HttpClientType.dio)) {
+    final engine = _resolve();
+    if (engine == null || !engine.accepts(HttpClientType.dio)) {
       handler.next(options);
       return;
     }
 
     final headers = _collectRequestHeaders(options);
 
-    final entry = _engine.begin(
+    final entry = engine.begin(
       client: HttpClientType.dio,
       method: options.method,
       url: options.uri,
@@ -47,9 +53,10 @@ class FerretDioInterceptor extends Interceptor {
   ) {
     _popScope(response.requestOptions);
     final id = response.requestOptions.extra[_entryIdExtra] as String?;
-    if (id != null) {
+    final engine = _resolve();
+    if (id != null && engine != null) {
       final reqHeaders = _collectRequestHeaders(response.requestOptions);
-      _engine.store.update(
+      engine.store.update(
         id,
         (current) => current.copyWith(requestHeaders: reqHeaders),
       );
@@ -57,7 +64,7 @@ class FerretDioInterceptor extends Interceptor {
       response.headers.map.forEach((key, values) {
         headers[key] = values.join(', ');
       });
-      _engine.complete(
+      engine.complete(
         id: id,
         statusCode: response.statusCode,
         responseHeaders: headers,
@@ -71,9 +78,10 @@ class FerretDioInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     _popScope(err.requestOptions);
     final id = err.requestOptions.extra[_entryIdExtra] as String?;
-    if (id != null) {
+    final engine = _resolve();
+    if (id != null && engine != null) {
       final reqHeaders = _collectRequestHeaders(err.requestOptions);
-      _engine.store.update(
+      engine.store.update(
         id,
         (current) => current.copyWith(requestHeaders: reqHeaders),
       );
@@ -83,7 +91,7 @@ class FerretDioInterceptor extends Interceptor {
         response.headers.map.forEach((key, values) {
           headers[key] = values.join(', ');
         });
-        _engine.complete(
+        engine.complete(
           id: id,
           statusCode: response.statusCode,
           responseHeaders: headers,
@@ -91,7 +99,7 @@ class FerretDioInterceptor extends Interceptor {
           error: err.message ?? err.toString(),
         );
       } else {
-        _engine.fail(id, err.message ?? err);
+        engine.fail(id, err.message ?? err);
       }
     }
     handler.next(err);
