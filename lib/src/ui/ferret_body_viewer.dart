@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'widgets/ferret_link_text.dart';
+
 /// Formats bodies and header lines for Ferret detail tabs.
 abstract final class FerretBodyViewer {
   /// Formats a captured body for display / copy.
@@ -58,6 +60,7 @@ abstract final class FerretBodyViewer {
 }
 
 /// Header line with a bold name and wrapping value (safe on narrow widths).
+/// URLs in the value are tappable.
 class FerretHeaderLine extends StatelessWidget {
   const FerretHeaderLine({
     super.key,
@@ -79,19 +82,10 @@ class FerretHeaderLine extends StatelessWidget {
       color: emphasize ? scheme.primary : null,
     );
 
-    return SelectableText.rich(
-      TextSpan(
-        style: base,
-        children: [
-          TextSpan(text: '$name: ', style: keyStyle),
-          TextSpan(
-            text: value,
-            style: emphasize
-                ? base?.copyWith(fontWeight: FontWeight.w600)
-                : null,
-          ),
-        ],
-      ),
+    return FerretLinkText(
+      value,
+      prefix: TextSpan(text: '$name: ', style: keyStyle),
+      style: emphasize ? base?.copyWith(fontWeight: FontWeight.w600) : base,
     );
   }
 }
