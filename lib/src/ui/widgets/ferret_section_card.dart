@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
 
 /// Card section used across Ferret detail tabs.
-class FerretSectionCard extends StatelessWidget {
+///
+/// With [collapsible], a chevron (or tapping the title) hides the children,
+/// e.g. to skip long headers and jump to the body.
+class FerretSectionCard extends StatefulWidget {
   const FerretSectionCard({
     super.key,
     required this.title,
     required this.children,
     this.trailing,
+    this.collapsible = false,
   });
 
   final String title;
   final List<Widget> children;
   final Widget? trailing;
+  final bool collapsible;
+
+  @override
+  State<FerretSectionCard> createState() => _FerretSectionCardState();
+}
+
+class _FerretSectionCardState extends State<FerretSectionCard> {
+  bool _expanded = true;
+
+  void _toggle() => setState(() => _expanded = !_expanded);
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final title = Text(
+      widget.title,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: scheme.primary,
+      ),
+    );
 
     return Card(
       elevation: 0,
@@ -32,19 +53,31 @@ class FerretSectionCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: scheme.primary,
+                  child: widget.collapsible
+                      ? GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _toggle,
+                          child: title,
+                        )
+                      : title,
+                ),
+                ?widget.trailing,
+                if (widget.collapsible)
+                  IconButton(
+                    onPressed: _toggle,
+                    tooltip: _expanded
+                        ? 'Collapse ${widget.title}'
+                        : 'Expand ${widget.title}',
+                    visualDensity: VisualDensity.compact,
+                    icon: AnimatedRotation(
+                      turns: _expanded ? 0 : -0.25,
+                      duration: const Duration(milliseconds: 150),
+                      child: const Icon(Icons.expand_more_rounded),
                     ),
                   ),
-                ),
-                ?trailing,
               ],
             ),
-            const SizedBox(height: 10),
-            ...children,
+            if (_expanded) ...[const SizedBox(height: 10), ...widget.children],
           ],
         ),
       ),

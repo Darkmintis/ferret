@@ -19,6 +19,7 @@ class FerretHeadersSection extends StatelessWidget {
 
     return FerretSectionCard(
       title: 'Headers',
+      collapsible: true,
       trailing: FerretClipboard.copyIcon(
         tooltip: 'Copy headers',
         onPressed: () => FerretClipboard.copy(
