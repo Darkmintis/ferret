@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/ferret_entry.dart';
+import '../widgets/ferret_link_text.dart';
 import 'ferret_overview_extra_cards.dart';
 import 'ferret_overview_general_card.dart';
 
@@ -27,7 +28,7 @@ class FerretOverviewTab extends StatelessWidget {
         24 + MediaQuery.paddingOf(context).bottom,
       ),
       children: [
-        SelectableText(
+        FerretLinkText(
           entry.url.toString(),
           style: Theme.of(
             context,

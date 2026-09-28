@@ -88,6 +88,7 @@ class _FerretDashboardState extends State<FerretDashboard> {
             store: widget.store,
             entry: entry,
             slowThreshold: widget.config.slowThreshold,
+            onOpenUrl: widget.config.onOpenUrl,
           ),
         ),
       ),

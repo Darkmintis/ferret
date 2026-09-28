@@ -35,13 +35,15 @@ class FerretOverviewSizeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final requestBytes = FerretMessageSize.bytes(
+    final requestBytes = FerretMessageSize.messageBytes(
       headers: entry.requestHeaders,
       body: entry.requestBody,
+      originalBodySize: entry.requestBodyOriginalSize,
     );
-    final responseBytes = FerretMessageSize.bytes(
+    final responseBytes = FerretMessageSize.messageBytes(
       headers: entry.responseHeaders ?? const {},
       body: entry.responseBody,
+      originalBodySize: entry.responseBodyOriginalSize,
     );
 
     return FerretSectionCard(

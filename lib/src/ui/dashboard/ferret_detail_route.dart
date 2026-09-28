@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/ferret_entry.dart';
@@ -11,6 +13,7 @@ abstract final class FerretDetailRoute {
     required FerretStore store,
     required FerretEntry entry,
     required Duration slowThreshold,
+    FutureOr<void> Function(Uri url)? onOpenUrl,
   }) {
     final entryId = entry.id;
     Navigator.of(context).push(
@@ -26,6 +29,7 @@ abstract final class FerretDetailRoute {
               return FerretDetailView(
                 entry: live,
                 slowThreshold: slowThreshold,
+                onOpenUrl: onOpenUrl,
               );
             },
           );

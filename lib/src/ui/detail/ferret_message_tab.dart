@@ -22,9 +22,16 @@ class FerretMessageTab extends StatelessWidget {
         ? entry.requestHeaders
         : (entry.responseHeaders ?? const <String, String>{});
     final body = isRequest ? entry.requestBody : entry.responseBody;
-    final bytes = FerretMessageSize.bytes(headers: headers, body: body);
-    final contentType =
-        FerretMessageSize.header(headers, 'content-type') ?? '—';
+    final originalSize = isRequest
+        ? entry.requestBodyOriginalSize
+        : entry.responseBodyOriginalSize;
+    final bytes = FerretMessageSize.messageBytes(
+      headers: headers,
+      body: body,
+      originalBodySize: originalSize,
+    );
+    final rawContentType = FerretMessageSize.header(headers, 'content-type');
+    final contentType = rawContentType ?? '—';
 
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -57,7 +64,11 @@ class FerretMessageTab extends StatelessWidget {
           const SizedBox(height: 12),
           FerretHeadersSection(headers: headers),
           const SizedBox(height: 12),
-          FerretBodySection(body: body),
+          FerretBodySection(
+            body: body,
+            originalSize: originalSize,
+            contentType: rawContentType,
+          ),
         ],
       ),
     );
