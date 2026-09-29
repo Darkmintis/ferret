@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1]
+
+### Changed
+
+- Release builds (`enableInRelease: true`) mark the bubble with a red border
+  instead of the `FERRET ACTIVE` text tag, plus a
+  "Ferret active in release build" screen-reader label.
+- Bubble keeps a 12px gap from every edge inside the safe area (status bar,
+  navigation bar, notches).
+- Example app enables Ferret in release builds to show the red border.
+
+### Fixed
+
+- Bubble sometimes started in the top-left corner when the first frame
+  reported a 0×0 screen (and could throw); it now waits for the real size.
+
 ## [0.2.0]
 
 ### Added
