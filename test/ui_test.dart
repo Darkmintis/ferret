@@ -349,6 +349,37 @@ void main() {
       expect(tester.getCenter(button).dy, closeTo(800 - 30 - 12 - 24, 1));
     });
 
+    testWidgets('0×0 first frame does not pin the bubble top-left', (
+      tester,
+    ) async {
+      tester.view.physicalSize = Size.zero;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      FerretBubble.clearPersistedPositionForTest();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                FerretBubble(
+                  store: FerretStore(maxEntries: 10)..add(completedEntry('1')),
+                  showReleaseTag: false,
+                  onOpen: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      tester.view.physicalSize = const Size(400, 800);
+      await tester.pumpAndSettle();
+
+      final center = tester.getCenter(find.text('1'));
+      expect(center.dx, closeTo(400 - 12 - 24, 1)); // right edge
+      expect(center.dy, closeTo(400, 1)); // vertical center
+    });
+
     testWidgets('release marker is a red border, not a text tag', (
       tester,
     ) async {

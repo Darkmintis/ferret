@@ -49,7 +49,10 @@ class FerretBubble extends StatefulWidget {
 
 class _FerretBubbleState extends State<FerretBubble> {
   late final FerretBubbleFlash _flash;
-  Offset? _offset;
+
+  /// `null` means "default for the current screen size" — never stored, since
+  /// the first frame can report a 0×0 screen and pin the bubble top-left.
+  Offset? _offset = _persistedBubblePosition;
   double _dragDistance = 0;
   Timer? _longPressTimer;
 
@@ -58,14 +61,6 @@ class _FerretBubbleState extends State<FerretBubble> {
     super.initState();
     _flash = FerretBubbleFlash(widget.store);
     widget.store.addListener(_onStore);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _offset ??=
-        _persistedBubblePosition ??
-        FerretBubbleLayout.defaultOffset(MediaQuery.of(context));
   }
 
   @override
@@ -149,6 +144,7 @@ class _FerretBubbleState extends State<FerretBubble> {
     if (_userHidden) return const SizedBox.shrink();
 
     final media = MediaQuery.of(context);
+    if (media.size.isEmpty) return const SizedBox.shrink();
     final offset = FerretBubbleLayout.clamp(
       _offset ?? FerretBubbleLayout.defaultOffset(media),
       media,
