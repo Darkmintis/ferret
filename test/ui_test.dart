@@ -314,6 +314,44 @@ void main() {
       expect(after.dx, closeTo(8 + 24, 1)); // edgeMargin + half size
     });
 
+    testWidgets('release marker is a red border, not a text tag', (
+      tester,
+    ) async {
+      Future<void> pump({required bool release}) => tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                FerretBubble(
+                  store: FerretStore(maxEntries: 10),
+                  showReleaseTag: release,
+                  onOpen: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      final redBorder = find.byWidgetPredicate(
+        (w) =>
+            w is Material &&
+            w.shape is RoundedRectangleBorder &&
+            (w.shape! as RoundedRectangleBorder).side.color ==
+                const Color(0xFFB3261E),
+      );
+
+      await pump(release: true);
+      expect(redBorder, findsOneWidget);
+      expect(find.text('FERRET ACTIVE'), findsNothing);
+      expect(
+        find.bySemanticsLabel(RegExp('^Ferret active in release build')),
+        findsOne,
+      );
+
+      await pump(release: false);
+      expect(redBorder, findsNothing);
+    });
+
     testWidgets('remembers position after bubble is remounted', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;

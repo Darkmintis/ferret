@@ -14,7 +14,7 @@ class FerretActivation {
   /// Whether interceptors, store, and overlay should run.
   final bool active;
 
-  /// Whether to print the release banner and show the red on-screen tag.
+  /// Whether to print the release banner and draw the red bubble border.
   ///
   /// Always `true` when Ferret is active in a release build. Not configurable.
   final bool showReleaseWarning;

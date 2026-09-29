@@ -10,7 +10,7 @@ import 'http_client_type.dart';
 /// unless [enableInRelease] is explicitly set.
 ///
 /// When Ferret is active in a release build, the console banner and red
-/// on-screen tag are **always** shown and cannot be disabled.
+/// bubble border are **always** shown and cannot be disabled.
 class FerretConfig {
   /// Master switch. When `false`, Ferret is a no-op even in debug.
   final bool enabled;
@@ -18,7 +18,7 @@ class FerretConfig {
   /// Explicit opt-in to run in release builds. Default `false`.
   ///
   /// When `true`, Ferret always prints a loud console warning and shows a
-  /// permanent red "FERRET ACTIVE" tag. That warning cannot be turned off.
+  /// permanent red border around the bubble. That warning cannot be turned off.
   final bool enableInRelease;
 
   /// Maximum captured calls retained in memory (ring buffer).

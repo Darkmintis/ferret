@@ -6,7 +6,6 @@ import '../core/ferret_store.dart';
 import 'ferret_bubble_button.dart';
 import 'ferret_bubble_flash.dart';
 import 'ferret_bubble_layout.dart';
-import 'ferret_release_tag.dart';
 import 'ferret_theme.dart';
 
 /// ponytail: process-local only (survives inspector open/close + hot reload).
@@ -29,6 +28,8 @@ class FerretBubble extends StatefulWidget {
   });
 
   final FerretStore store;
+
+  /// Draws the red release-build border around the bubble.
   final bool showReleaseTag;
   final VoidCallback onOpen;
 
@@ -162,24 +163,14 @@ class _FerretBubbleState extends State<FerretBubble> {
         final background = flash ? scheme.error : scheme.inverseSurface;
         final foreground = flash ? scheme.onError : scheme.onInverseSurface;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (widget.showReleaseTag)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 6),
-                child: FerretReleaseTag(),
-              ),
-            FerretBubbleButton(
-              count: widget.store.length,
-              background: background,
-              foreground: foreground,
-              onPanStart: _onPanStart,
-              onPanUpdate: _onPanUpdate,
-              onPanEnd: _onPanEnd,
-            ),
-          ],
+        return FerretBubbleButton(
+          count: widget.store.length,
+          background: background,
+          foreground: foreground,
+          releaseBorder: widget.showReleaseTag,
+          onPanStart: _onPanStart,
+          onPanUpdate: _onPanUpdate,
+          onPanEnd: _onPanEnd,
         );
       }),
     );

@@ -20,7 +20,7 @@ Ferret is different:
 | Debug / profile | On | On by default |
 | Release builds | Usually unavailable or unsafe | **Off by default** (true no-op) |
 | Opt-in release mode | Rare / not supported | Supported via `enableInRelease: true` |
-| Release warning | Often missing | **Always on** — console banner + permanent red tag (cannot be disabled) |
+| Release warning | Often missing | **Always on** — console banner + permanent red bubble border (cannot be disabled) |
 | Data in-app | Often masked | **Full raw** bodies & headers |
 | Setup | Wire every client | `Ferret.install()` + `builder: Ferret.builder` |
 
@@ -180,7 +180,7 @@ FerretConfig(
 |---|---|
 | Debug / Profile | On when `enabled: true` (default) |
 | Release | **Fully off** unless `enableInRelease: true` |
-| Release + `enableInRelease: true` | On, with a loud console warning **and** a permanent red **FERRET ACTIVE** tag |
+| Release + `enableInRelease: true` | On, with a loud console warning **and** a permanent red border around the bubble |
 
 When disabled, Ferret does not intercept, store, or render anything.
 

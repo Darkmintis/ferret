@@ -13,6 +13,7 @@ class FerretBubbleButton extends StatelessWidget {
     required this.onPanStart,
     required this.onPanUpdate,
     required this.onPanEnd,
+    this.releaseBorder = false,
   });
 
   final int count;
@@ -22,16 +23,25 @@ class FerretBubbleButton extends StatelessWidget {
   final GestureDragUpdateCallback onPanUpdate;
   final GestureDragEndCallback onPanEnd;
 
+  /// Red border marking Ferret as active in a release build.
+  final bool releaseBorder;
+
   static const size = 48.0;
   static const radius = 12.0;
+  static const releaseColor = Color(0xFFB3261E);
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final button = Material(
       color: background,
       elevation: 3,
       shadowColor: Colors.black38,
-      borderRadius: BorderRadius.circular(radius),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius),
+        side: releaseBorder
+            ? const BorderSide(color: releaseColor, width: 3)
+            : BorderSide.none,
+      ),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
         width: size,
@@ -58,5 +68,7 @@ class FerretBubbleButton extends StatelessWidget {
         ),
       ),
     );
+    if (!releaseBorder) return button;
+    return Semantics(label: 'Ferret active in release build', child: button);
   }
 }
