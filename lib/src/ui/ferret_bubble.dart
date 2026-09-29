@@ -65,7 +65,7 @@ class _FerretBubbleState extends State<FerretBubble> {
     super.didChangeDependencies();
     _offset ??=
         _persistedBubblePosition ??
-        FerretBubbleLayout.defaultOffset(MediaQuery.sizeOf(context));
+        FerretBubbleLayout.defaultOffset(MediaQuery.of(context));
   }
 
   @override
@@ -119,7 +119,7 @@ class _FerretBubbleState extends State<FerretBubble> {
 
   void _onPanUpdate(DragUpdateDetails details) {
     final media = MediaQuery.of(context);
-    final current = _offset ?? FerretBubbleLayout.defaultOffset(media.size);
+    final current = _offset ?? FerretBubbleLayout.defaultOffset(media);
     _dragDistance += details.delta.distance;
     if (_dragDistance >= FerretBubbleLayout.dragTapSlop) {
       _longPressTimer?.cancel();
@@ -137,7 +137,7 @@ class _FerretBubbleState extends State<FerretBubble> {
       return;
     }
     final media = MediaQuery.of(context);
-    final current = _offset ?? FerretBubbleLayout.defaultOffset(media.size);
+    final current = _offset ?? FerretBubbleLayout.defaultOffset(media);
     setState(() {
       _offset = FerretBubbleLayout.snapToEdge(current, media);
       _persistPosition();
@@ -150,7 +150,7 @@ class _FerretBubbleState extends State<FerretBubble> {
 
     final media = MediaQuery.of(context);
     final offset = FerretBubbleLayout.clamp(
-      _offset ?? FerretBubbleLayout.defaultOffset(media.size),
+      _offset ?? FerretBubbleLayout.defaultOffset(media),
       media,
     );
 

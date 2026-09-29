@@ -311,7 +311,42 @@ void main() {
 
       final after = tester.getCenter(button);
       expect(after.dx, lessThan(before.dx - 50));
-      expect(after.dx, closeTo(8 + 24, 1)); // edgeMargin + half size
+      expect(after.dx, closeTo(12 + 24, 1)); // edgeMargin + half size
+    });
+
+    testWidgets('keeps 12px clear of status bar and navigation bar', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.padding = const FakeViewPadding(top: 40, bottom: 30);
+      addTearDown(tester.view.reset);
+      addTearDown(FerretBubble.clearPersistedPositionForTest);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                FerretBubble(
+                  store: FerretStore(maxEntries: 10)..add(completedEntry('1')),
+                  showReleaseTag: false,
+                  onOpen: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      final button = find.text('1');
+
+      await tester.drag(button, const Offset(0, -2000));
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(button).dy, closeTo(40 + 12 + 24, 1));
+
+      await tester.drag(button, const Offset(0, 4000));
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(button).dy, closeTo(800 - 30 - 12 - 24, 1));
     });
 
     testWidgets('release marker is a red border, not a text tag', (
