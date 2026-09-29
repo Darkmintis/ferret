@@ -6,7 +6,8 @@ import 'app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Ferret.install();
+  // Demo only: shows the red release border. Keep `false` in real apps.
+  Ferret.install(config: const FerretConfig(enableInRelease: true));
 
   runApp(const FerretExampleApp());
 }
