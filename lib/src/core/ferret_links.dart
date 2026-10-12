@@ -38,6 +38,19 @@ abstract final class FerretLinks {
     'avif',
   };
 
+  static const _videoExtensions = {
+    'mp4',
+    'webm',
+    'mov',
+    'm4v',
+    'mkv',
+    'avi',
+    'ogv',
+  };
+
+  /// Bodies larger than this are treated as heavy: video never auto-loads.
+  static const int heavyMediaBytes = 2 * 1024 * 1024;
+
   /// All URL matches in [text], in order.
   static List<FerretLinkMatch> matches(String text) {
     final scanned = text.length > maxScanChars
@@ -77,6 +90,24 @@ abstract final class FerretLinks {
   /// Whether [contentType] is `image/*`.
   static bool isImageContentType(String? contentType) =>
       contentType?.trim().toLowerCase().startsWith('image/') ?? false;
+
+  /// Whether [url]'s path ends in a common video extension.
+  static bool isVideoUrl(String url) {
+    final path = Uri.tryParse(url)?.path.toLowerCase() ?? '';
+    final dot = path.lastIndexOf('.');
+    return dot != -1 && _videoExtensions.contains(path.substring(dot + 1));
+  }
+
+  /// Whether [contentType] is `video/*`.
+  static bool isVideoContentType(String? contentType) =>
+      contentType?.trim().toLowerCase().startsWith('video/') ?? false;
+
+  /// Image or video URL (kept out of the home call list).
+  static bool isMediaUrl(String url) => isImageUrl(url) || isVideoUrl(url);
+
+  /// `image/*` or `video/*`.
+  static bool isMediaContentType(String? contentType) =>
+      isImageContentType(contentType) || isVideoContentType(contentType);
 
   /// Drops trailing punctuation and unbalanced closing brackets, which are
   /// almost always sentence / JSON syntax rather than part of the URL.
