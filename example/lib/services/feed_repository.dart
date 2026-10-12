@@ -57,16 +57,12 @@ class FeedRepository {
     await _http.get(Uri.parse('$baseUrl/todos/1'));
   }
 
-  /// Use case: images → body preview, tappable image links, Links tab.
+  /// Use case: image/video URLs inside a JSON API call (Links tab + preview).
   ///
-  /// The GET returns `image/jpeg` bytes (rendered inline). The POST echoes a
-  /// JSON body with image URLs: one loads, one 404s (preview shows the HTTP
-  /// status), one is SVG (preview unsupported).
+  /// Pure `.jpg` / `.mp4` fetches are omitted from Ferret's home list. The
+  /// POST echoes URLs: one image loads, one 404s, one SVG, one video (not
+  /// auto-loaded).
   Future<void> loadImages() async {
-    await _dio.get<List<int>>(
-      'https://picsum.photos/id/237/300/200.jpg',
-      options: Options(responseType: ResponseType.bytes),
-    );
     await _dio.post<dynamic>(
       '/posts',
       data: {
@@ -75,6 +71,9 @@ class FeedRepository {
         'thumbnail': 'https://picsum.photos/id/does-not-exist/200.jpg',
         'logo':
             'https://upload.wikimedia.org/wikipedia/commons/0/02/SVG_logo.svg',
+        'clip':
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/'
+            'sample/BigBuckBunny.mp4',
         'docs': 'https://pub.dev/packages/ferret',
       },
     );

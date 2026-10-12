@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 8),
           _UseCaseButton(
             label: 'Load images',
-            subtitle: 'image bytes + image links (preview, Links tab)',
+            subtitle: 'JSON with image/video links (preview, Links tab)',
             color: const Color(0xFFE65100),
             enabled: !_busy,
             onPressed: () => _run('Load images', widget.repository.loadImages),
