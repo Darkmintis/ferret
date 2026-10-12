@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2]
+
+### Changed
+
+- Home call list omits image/video URL fetches (and Ferret's own image
+  previews); open media from Links inside the JSON API call instead.
+- `maxBodyBytes` no longer truncates `image/*` / `video/*` bodies.
+- Video links are never auto-loaded; copy or open instead.
+
 ## [0.2.1]
 
 ### Changed

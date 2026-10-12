@@ -28,7 +28,7 @@ Ferret is different:
 
 ```yaml
 dependencies:
-  ferret: ^0.2.1
+  ferret: ^0.2.2
 ```
 
 ```bash
