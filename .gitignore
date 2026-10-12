@@ -44,3 +44,5 @@ app.*.map.json
 .fvm/flutter_sdk
 .fvm/versions
 .fvm/release
+
+graphify-out/
