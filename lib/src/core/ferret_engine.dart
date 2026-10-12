@@ -4,6 +4,7 @@ import 'dart:math';
 import '../config/ferret_config.dart';
 import '../config/http_client_type.dart';
 import 'ferret_entry.dart';
+import 'ferret_links.dart';
 import 'ferret_message_size.dart';
 import 'ferret_store.dart';
 
@@ -20,6 +21,10 @@ class FerretEngine {
   final FerretStore _store;
   FerretConfig _config;
   final Random _random = Random();
+
+  /// Media-URL requests skipped at [begin]; dropped again if a non-media URL
+  /// responds with `image/*` / `video/*`.
+  final Set<String> _mediaSkipIds = <String>{};
 
   FerretConfig get config => _config;
 
@@ -47,7 +52,12 @@ class FerretEngine {
     Object? requestBody,
     DateTime? startTime,
   }) {
-    final captured = captureBody(requestBody);
+    final mediaUrl = FerretLinks.isMediaUrl(url.toString());
+    final captured = captureBody(
+      requestBody,
+      contentType: FerretMessageSize.header(requestHeaders, 'content-type'),
+      url: url,
+    );
     final entry = FerretEntry(
       id: nextId(),
       client: client,
@@ -58,17 +68,32 @@ class FerretEngine {
       requestBodyOriginalSize: captured.originalSize,
       startTime: startTime ?? DateTime.now(),
     );
-    _store.add(entry);
+    // Image/video URLs (and Ferret's own NetworkImage previews) stay off the
+    // home list — Alice-style. Media still previews inside JSON API calls.
+    if (mediaUrl) {
+      _mediaSkipIds.add(entry.id);
+    } else {
+      _store.add(entry);
+    }
     return entry;
   }
 
   /// Sets the request body after [begin] (streamed `dart:io` requests).
   void setRequestBody(String id, Object? body) {
-    final captured = captureBody(body);
+    if (_mediaSkipIds.contains(id) || _store.getById(id) == null) return;
+    final current = _store.getById(id)!;
+    final captured = captureBody(
+      body,
+      contentType: FerretMessageSize.header(
+        current.requestHeaders,
+        'content-type',
+      ),
+      url: current.url,
+    );
     if (captured.body == null) return;
     _store.update(
       id,
-      (current) => current.copyWith(
+      (entry) => entry.copyWith(
         requestBody: captured.body,
         requestBodyOriginalSize: captured.originalSize,
       ),
@@ -83,28 +108,43 @@ class FerretEngine {
     String? error,
     DateTime? endTime,
   }) {
+    if (_mediaSkipIds.remove(id)) return;
+
+    final current = _store.getById(id);
+    if (current == null) return;
+
+    final headers = responseHeaders ?? current.responseHeaders ?? const {};
+    final contentType = FerretMessageSize.header(headers, 'content-type');
+    if (FerretLinks.isMediaContentType(contentType)) {
+      _store.remove(id);
+      return;
+    }
+
     final ended = endTime ?? DateTime.now();
-    final captured = captureBody(responseBody);
-    _store.update(id, (current) {
+    final captured = captureBody(
+      responseBody,
+      contentType: contentType,
+      url: current.url,
+    );
+    _store.update(id, (entry) {
       final hasNewBody = captured.body != null;
-      final body = hasNewBody ? captured.body : current.responseBody;
+      final body = hasNewBody ? captured.body : entry.responseBody;
       final originalSize = hasNewBody
           ? captured.originalSize
-          : current.responseBodyOriginalSize;
-      final headers = responseHeaders ?? current.responseHeaders ?? const {};
-      return current.copyWith(
+          : entry.responseBodyOriginalSize;
+      return entry.copyWith(
         statusCode: statusCode,
         responseHeaders: responseHeaders == null
-            ? current.responseHeaders
+            ? entry.responseHeaders
             : Map<String, String>.unmodifiable(responseHeaders),
         responseBody: body,
         responseBodyOriginalSize: originalSize,
         endTime: ended,
         sizeBytes:
             FerretMessageSize.messageBytes(
-              headers: current.requestHeaders,
-              body: current.requestBody,
-              originalBodySize: current.requestBodyOriginalSize,
+              headers: entry.requestHeaders,
+              body: entry.requestBody,
+              originalBodySize: entry.requestBodyOriginalSize,
             ) +
             FerretMessageSize.messageBytes(
               headers: headers,
@@ -125,12 +165,18 @@ class FerretEngine {
   }
 
   /// Applies `captureBody` and `maxBodyBytes` to a raw body.
-  FerretCapturedBody captureBody(Object? raw) {
+  ///
+  /// Image/video bodies are never truncated — [maxBodyBytes] only caps
+  /// text/JSON. Media URL calls are dropped from the store entirely.
+  FerretCapturedBody captureBody(Object? raw, {String? contentType, Uri? url}) {
     if (!_config.captureBody || raw == null) {
       return (body: null, originalSize: null);
     }
     final body = _normalizeBody(raw);
-    final limit = _config.maxBodyBytes;
+    final media =
+        FerretLinks.isMediaContentType(contentType) ||
+        (url != null && FerretLinks.isMediaUrl(url.toString()));
+    final limit = media ? null : _config.maxBodyBytes;
     if (limit == null || !_mayExceed(body, limit)) {
       return (body: body, originalSize: null);
     }

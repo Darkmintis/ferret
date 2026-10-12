@@ -29,7 +29,8 @@ class FerretConfig {
 
   /// Largest body kept per request/response, in bytes. Longer bodies are cut
   /// to this size and marked as truncated; sizes still report the full length.
-  /// `null` keeps whole bodies (watch memory with large JSON or images).
+  /// `null` keeps whole bodies. Image/video bodies are never truncated;
+  /// dedicated image/video URL calls are omitted from the home list.
   final int? maxBodyBytes;
 
   /// Which client stacks to intercept.
