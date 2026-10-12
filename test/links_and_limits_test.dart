@@ -30,12 +30,16 @@ void main() {
       ]);
     });
 
-    test('classifies images by extension and content-type', () {
+    test('classifies images and video by extension and content-type', () {
       expect(FerretLinks.isImageUrl('https://r2.dev/x/pic.WEBP?v=2'), isTrue);
       expect(FerretLinks.isImageUrl('https://example.com/api/png'), isFalse);
       expect(FerretLinks.isSvgUrl('https://example.com/logo.svg'), isTrue);
       expect(FerretLinks.isImageContentType('image/png; q=1'), isTrue);
       expect(FerretLinks.isImageContentType('application/json'), isFalse);
+      expect(FerretLinks.isVideoUrl('https://cdn.example.com/a.mp4'), isTrue);
+      expect(FerretLinks.isMediaUrl('https://cdn.example.com/a.JPG'), isTrue);
+      expect(FerretLinks.isVideoContentType('video/mp4'), isTrue);
+      expect(FerretLinks.isMediaContentType('image/jpeg'), isTrue);
     });
 
     test('scan is capped for huge text', () {
@@ -84,6 +88,47 @@ void main() {
     test('null keeps whole bodies', () {
       final captured = engine(maxBodyBytes: null).captureBody('x' * 5000);
       expect((captured.body! as String).length, 5000);
+    });
+
+    test('image and video bodies ignore maxBodyBytes', () {
+      final bytes = List<int>.filled(100, 7);
+      final image = engine().captureBody(bytes, contentType: 'image/jpeg');
+      expect(image.body, bytes);
+      expect(image.originalSize, isNull);
+
+      final video = engine().captureBody(bytes, contentType: 'video/mp4');
+      expect(video.body, bytes);
+      expect(video.originalSize, isNull);
+    });
+
+    test('media URL calls stay off the store / home list', () {
+      final e = engine();
+      final skipped = e.begin(
+        client: HttpClientType.http,
+        method: 'GET',
+        url: Uri.parse('https://cdn.example.com/pic.jpg'),
+      );
+      e.complete(
+        id: skipped.id,
+        statusCode: 200,
+        responseHeaders: const {'content-type': 'image/jpeg'},
+        responseBody: List<int>.filled(20, 1),
+      );
+      expect(e.store.isEmpty, isTrue);
+
+      final api = e.begin(
+        client: HttpClientType.http,
+        method: 'GET',
+        url: Uri.parse('https://api.example.com/avatar'),
+      );
+      e.complete(
+        id: api.id,
+        statusCode: 200,
+        responseHeaders: const {'content-type': 'image/png'},
+        responseBody: List<int>.filled(20, 2),
+      );
+      expect(e.store.getById(api.id), isNull);
+      expect(e.store.isEmpty, isTrue);
     });
 
     test('entry size reports the full, untruncated size', () {
@@ -196,6 +241,26 @@ void main() {
       await tester.tap(find.byTooltip('Open link'));
       await tester.pumpAndSettle();
       expect(opened, Uri.parse('https://example.com'));
+    });
+
+    testWidgets('video links are not auto-loaded', (tester) async {
+      const videoUrl = 'https://cdn.example.com/clip.mp4';
+      await pumpDetail(
+        tester,
+        of: completedEntry(
+          'v1',
+          responseHeaders: const {'content-type': 'application/json'},
+          responseBody: '{"clip":"$videoUrl"}',
+        ),
+      );
+      await tester.tap(find.text('Links'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(videoUrl));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Video link'), findsOneWidget);
+      expect(find.byTooltip('Preview image'), findsNothing);
+      expect(find.textContaining('Videos are not auto-loaded'), findsOneWidget);
     });
 
     testWidgets('image preview loads on tap and shows the HTTP status', (
