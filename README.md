@@ -148,13 +148,24 @@ Ferret.install(
 
 Bodies larger than `maxBodyBytes` are cut at a character boundary; the
 inspector shows a "Truncated" notice and sizes still report the full body.
+**Image and video bodies are never truncated** — the cap applies to text/JSON
+only.
 
-### Links and image previews
+### Home list vs media
+
+The home call list shows API endpoints only. Direct image/video URL fetches
+(and Ferret’s own tap-to-preview image loads) are omitted so the list stays
+clean — same idea as Alice. Open those URLs from the **Links** tab (or body)
+of the JSON/API call that contained them.
+
+### Links and media previews
 
 URLs in headers and bodies are tappable. Tapping one opens a sheet with icon
-buttons: copy, preview (eye, image URLs only) and open (only when `onOpenUrl`
-is set). A **Links** tab lists every unique URL in a call, grouped by where it
-appeared. `image/*` response bodies render as images.
+buttons: copy, preview (eye, **image** URLs only — tap to load, not automatic)
+and open (only when `onOpenUrl` is set). **Video** links are never auto-loaded;
+copy or open them instead. A **Links** tab lists every unique URL in a call,
+grouped by where it appeared. If an `image/*` body is kept on an entry, it
+renders as an image; `video/*` bodies show size and a “not auto-loaded” notice.
 
 Headers and body cards have a chevron to collapse long sections.
 
@@ -195,10 +206,11 @@ When disabled, Ferret does not intercept, store, or render anything.
 ## Features
 
 - Floating count button → full inspector
-- Call list with method, path, host, status, duration, size
+- Call list with method, path, host, status, duration, size (image/video URL
+  fetches omitted)
 - Detail tabs: Overview · Request · Response · Links · Error
-- Tappable URLs, link sheet, tap-to-load image previews
-- Body size cap (`maxBodyBytes`) to bound memory
+- Tappable URLs, link sheet, tap-to-load image previews; video copy/open only
+- Body size cap (`maxBodyBytes`) for text/JSON; image/video bodies kept whole
 - Search & filters (method, failed, slow)
 - Copy as cURL (per call)
 - Share / copy session as HAR
