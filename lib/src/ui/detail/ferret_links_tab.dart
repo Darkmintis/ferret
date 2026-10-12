@@ -94,13 +94,22 @@ class _LinkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isImage = FerretLinks.isImageUrl(url);
+    final isVideo = FerretLinks.isVideoUrl(url);
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
       leading: Icon(
-        isImage ? Icons.image_outlined : Icons.link_rounded,
+        isImage
+            ? Icons.image_outlined
+            : isVideo
+            ? Icons.videocam_outlined
+            : Icons.link_rounded,
         color: scheme.primary,
-        semanticLabel: isImage ? 'Image link' : 'Link',
+        semanticLabel: isImage
+            ? 'Image link'
+            : isVideo
+            ? 'Video link'
+            : 'Link',
       ),
       title: Text(
         url,

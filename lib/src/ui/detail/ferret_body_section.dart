@@ -35,15 +35,20 @@ class FerretBodySection extends StatelessWidget {
         FerretLinks.isImageContentType(contentType) && body is List<int>
         ? body
         : null;
-    final bodyText = imageBytes == null
+    final videoBytes =
+        FerretLinks.isVideoContentType(contentType) && body is List<int>
+        ? body
+        : null;
+    final bodyText = imageBytes == null && videoBytes == null
         ? FerretBodyViewer.formatBody(body)
         : '';
-    final hasBody = imageBytes != null || bodyText.trim().isNotEmpty;
+    final hasBody =
+        imageBytes != null || videoBytes != null || bodyText.trim().isNotEmpty;
 
     return FerretSectionCard(
       title: 'Body',
       collapsible: true,
-      trailing: imageBytes != null
+      trailing: imageBytes != null || videoBytes != null
           ? null
           : FerretClipboard.copyIcon(
               tooltip: 'Copy body',
@@ -74,6 +79,12 @@ class FerretBodySection extends StatelessWidget {
           )
         else if (imageBytes != null)
           _imageBody(context, imageBytes)
+        else if (videoBytes != null)
+          _VideoBodyNotice(
+            contentType: contentType,
+            bytes: videoBytes,
+            originalSize: originalSize,
+          )
         else
           FerretLinkText(
             bodyText,
@@ -98,17 +109,57 @@ class FerretBodySection extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 8),
-        if (originalSize != null)
-          Text(
-            'Image was truncated, so it can\'t be previewed. Raise '
-            'FerretConfig.maxBodyBytes to keep whole images.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          )
-        else
-          FerretImagePreview.memory(
-            bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
-          ),
+        FerretImagePreview.memory(
+          bytes is Uint8List ? bytes : Uint8List.fromList(bytes),
+        ),
       ],
+    );
+  }
+}
+
+/// Video bodies are never auto-played (no player dependency; heavy files).
+class _VideoBodyNotice extends StatelessWidget {
+  const _VideoBodyNotice({
+    required this.contentType,
+    required this.bytes,
+    this.originalSize,
+  });
+
+  final String? contentType;
+  final List<int> bytes;
+  final int? originalSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = FerretMessageSize.formatBytes(originalSize ?? bytes.length);
+    final type = contentType?.split(';').first.trim() ?? 'video';
+    final heavy = (originalSize ?? bytes.length) >= FerretLinks.heavyMediaBytes;
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.videocam_outlined, color: scheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                heavy
+                    ? '$type · $size — not auto-loaded (heavy). '
+                          'Copy or open the URL from the Links tab.'
+                    : '$type · $size — not auto-played. '
+                          'Copy or open the URL from the Links tab.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

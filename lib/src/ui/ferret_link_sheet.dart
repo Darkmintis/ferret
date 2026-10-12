@@ -61,7 +61,13 @@ class _LinkSheetBodyState extends State<_LinkSheetBody> {
     final scheme = Theme.of(context).colorScheme;
     final url = widget.url;
     final isImage = FerretLinks.isImageUrl(url);
+    final isVideo = FerretLinks.isVideoUrl(url);
     final uri = Uri.tryParse(url);
+    final title = isImage
+        ? 'Image link'
+        : isVideo
+        ? 'Video link'
+        : 'Link';
 
     return SafeArea(
       child: Padding(
@@ -74,7 +80,7 @@ class _LinkSheetBodyState extends State<_LinkSheetBody> {
               children: [
                 Expanded(
                   child: Text(
-                    isImage ? 'Image link' : 'Link',
+                    title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: scheme.primary,
@@ -108,6 +114,15 @@ class _LinkSheetBodyState extends State<_LinkSheetBody> {
             ),
             const SizedBox(height: 8),
             SelectableText(url, style: Theme.of(context).textTheme.bodyMedium),
+            if (isVideo) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Videos are not auto-loaded. Copy or open the link.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
             if (_preview) ...[
               const SizedBox(height: 16),
               FerretImagePreview.network(url),
